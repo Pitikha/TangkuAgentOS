@@ -1,0 +1,14 @@
+.venv/
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.py[cod]
+*.pyo
+*.log
+*.tmp
+*.zip
+.DS_Store
+pytest_cache/
+*/__pycache__/
+.testrunner.cfg

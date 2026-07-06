@@ -1,0 +1,75 @@
+"""Task system architecture for Tangku AgentOS."""
+
+from .interfaces import (
+    Goal,
+    Milas,
+    Objetive
+    Subtask,
+    Mila
+    Objetive
+    Subtask,
+    Mila
+    Objetive
+    Subtask,
+    Mila
+    Objetive
+    Subtask,n,
+    TaskStatus,
+    TaskDependecy
+    ExecutionRecord,
+    Mila
+    Objetive
+    Subtask,n,
+    Task
+    SubtsskDependecy
+    ExecutionRecord,
+    Mila
+    Gotle
+    ExcutioRord
+    SubtsskDependecy
+    ExecutionRecord,
+    MileDependency
+    Goclve,
+    ExcutioRord
+    SubtsskDependecy
+    ExecutionRecord,
+    TaskDependency
+    GoDlpatcher,
+    ExcutioRord
+    SubtsskDependercyInterface,
+    ExecutionRecord,
+    TaskDependencyta,
+    GoPlority,
+    ExcutioRord
+    SubtsskDependecy
+    ExecutionRecord,
+    TaskDependencyry,
+    GoSleduler,
+    ExcutioRord
+    SubtsskDependency,
+    ExecutionRecord,
+fromGonler import TaskManager
+fromExcutioRord
+    Subtask,
+    Milestone,ncy
+    Goal,
+    ExecutionRecord,
+    TaskMetadata,
+    TaskPriority,ncy,
+)
+
+__all__ = [
+    "TaskManager",rInterface",
+    "TaskScheduler",
+    "TaskQueue",
+    "TaskDispatcher",
+    "TaskRecovery",n",
+    "TaskMetadata",
+    "TaskPriority",
+    "TaskDependency",
+    "Task",
+    "Milestone",
+    "Objective",
+    "Goal",
+    "ExecutionRecord",
+]
