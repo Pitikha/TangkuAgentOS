@@ -1,14 +1,45 @@
-Security Policy
+# Security Policy
 
-If you discover a security vulnerability, please do not publish it publicly.
+## Reporting a Security Issue
 
-Instead, report it privately so it can be investigated and fixed before disclosure.
+If you discover a security vulnerability in TangkuAgentOS, please do not create a public issue.
+
+Instead, report it privately to the project maintainers.
+
+---
+
+## What to Include
 
 Please include:
 
-- Description
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if available)
+- Description of the vulnerability.
+- Steps to reproduce the issue.
+- Affected components.
+- Possible impact.
+- Suggested fixes (if available).
 
-Responsible disclosure is appreciated.
+---
+
+## Response Process
+
+After receiving a report:
+
+1. The issue will be reviewed.
+2. The vulnerability will be investigated.
+3. A fix will be prepared if necessary.
+4. Updates will be shared after the issue is resolved.
+
+---
+
+## Security Best Practices
+
+Contributors should:
+
+- Avoid committing secrets or API keys.
+- Keep dependencies updated.
+- Follow secure coding practices.
+- Report security concerns responsibly.
+
+---
+
+Thank you for helping keep TangkuAgentOS secure.
