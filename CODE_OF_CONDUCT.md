@@ -1,34 +1,57 @@
-Contributing to TangkuAgentOS
+# Code of Conduct
 
-Thank you for your interest in contributing.
+## Our Commitment
 
-Getting Started
+The TangkuAgentOS community is dedicated to creating an open, respectful, and collaborative environment for everyone.
 
-1. Fork the repository.
-2. Create a new branch.
-3. Make your changes.
-4. Test your changes.
-5. Open a Pull Request.
+We welcome contributions from people with different backgrounds, experience levels, and perspectives.
 
-Before You Start
+---
 
-If you plan to work on a large feature, please create an Issue first so the work can be discussed.
+## Expected Behavior
 
-Code Style
+Community members should:
 
-- Keep code modular.
-- Follow the existing architecture.
-- Avoid duplicate functionality.
-- Write clear commit messages.
-- Add documentation when introducing new features.
+- Be respectful and constructive.
+- Help others learn and improve.
+- Give useful feedback.
+- Respect different opinions.
+- Focus on improving the project.
 
-Pull Requests
+---
 
-Please include:
+## Unacceptable Behavior
 
-- What changed
-- Why it changed
-- Any testing performed
-- Screenshots (if UI related)
+The following behavior is not acceptable:
 
-Thank you for helping improve TangkuAgentOS.
+- Harassment or discrimination.
+- Personal attacks.
+- Deliberately disruptive behavior.
+- Sharing harmful or inappropriate content.
+- Any action that damages the community.
+
+---
+
+## Reporting Problems
+
+If you experience or see unacceptable behavior, please report it through:
+
+- GitHub Discussions
+- GitHub Issues
+- Direct contact with project maintainers
+
+Reports will be reviewed and handled appropriately.
+
+---
+
+## Maintainer Responsibility
+
+Maintainers may:
+
+- Remove harmful content.
+- Close discussions that violate guidelines.
+- Take actions needed to keep the community healthy.
+
+---
+
+Thank you for helping make TangkuAgentOS a welcoming open-source project.
