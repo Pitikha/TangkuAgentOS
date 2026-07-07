@@ -1,42 +1,34 @@
-# Contributing
+Contributing to TangkuAgentOS
 
-Thank you for contributing to Tangku AgentOS.
+Thank you for your interest in contributing.
 
-## How to Contribute
+Getting Started
 
-1. Read the repository documentation, issue tracker, and open discussions before starting work.
-2. Open an issue to describe bugs, feature ideas, or documentation improvements.
-3. Create a dedicated branch for your change from `main`.
-4. Add tests or documentation updates for all meaningful changes.
-5. Submit a pull request following the GitHub PR template.
+1. Fork the repository.
+2. Create a new branch.
+3. Make your changes.
+4. Test your changes.
+5. Open a Pull Request.
 
-## Contribution Process
+Before You Start
 
-- Use clear, descriptive commit messages.
-- Keep changes focused and maintain backward compatibility.
-- Include regression tests or smoke checks for runtime behavior.
-- Update documentation when functionality or interfaces change.
+If you plan to work on a large feature, please create an Issue first so the work can be discussed.
 
-## Code Review
+Code Style
 
-Pull requests should include:
+- Keep code modular.
+- Follow the existing architecture.
+- Avoid duplicate functionality.
+- Write clear commit messages.
+- Add documentation when introducing new features.
 
-- Summary of changes
-- Validation steps taken
-- Test results
-- Documentation updates
+Pull Requests
 
-## Validation
+Please include:
 
-Before submitting a pull request, validate locally:
+- What changed
+- Why it changed
+- Any testing performed
+- Screenshots (if UI related)
 
-```bash
-pytest -q
-python -m build --sdist --wheel
-```
-
-## Reporting Issues
-
-Open issues at: https://github.com/gauryat/TangkuAgentOS/issues
-
-If your issue is security-related, use the security procedures in `SECURITY.md`.
+Thank you for helping improve TangkuAgentOS.
