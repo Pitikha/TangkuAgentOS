@@ -1,68 +1,48 @@
-TangkuAgentOS
+# 🧠 TangkuAgentOS
 
-TangkuAgentOS is an ambitious open-source AI Operating System designed to provide a modular, extensible environment for intelligent agents, workflows, memory systems, automation, and AI-powered development.
+> An open-source AI Operating System for building, managing, and orchestrating intelligent agents, workflows, memory systems, and AI runtimes.
 
-The long-term vision is to build an AI Operating System where multiple AI providers, agents, plugins, memories, workflows, and runtimes work together through a unified AI Kernel.
+## 🌌 Vision
 
-Vision
+TangkuAgentOS aims to become a modular AI Operating System where multiple AI models, agents, tools, plugins, memories, and workflows operate together through a unified AI Kernel.
 
-TangkuAgentOS aims to become an extensible AI platform with:
+The goal is to create an extensible platform for developers to build the next generation of intelligent applications.
 
-- AI Kernel
-- Runtime Manager
-- Agent Ecosystem Runtime
+---
+
+# ✨ Features
+
+## Core Architecture
+
+- 🧠 AI Kernel
+- ⚙️ Runtime Manager
+- 🔄 Lifecycle Management
+- 🩺 Health Monitoring
+- 📡 Event Bus
+- 🔌 Plugin Runtime
+- 🛠 Tool Registry
+
+## AI Capabilities
+
 - Multi-provider AI support
-- Long-term Memory
-- Workflow Engine
-- Plugin System
-- Tool Registry
-- Agent Marketplace
-- Agent Learning
-- Analytics
-- Multi-agent Collaboration
+- Agent ecosystem
+- Multi-agent collaboration
+- Long-term memory
+- Workflow automation
+- Agent learning systems
+- AI-powered development tools
+
+## Developer Platform
+
+- CLI interface
+- API server
+- Web dashboard
 - Developer SDK
-- Web Dashboard
-- CLI
-- API Server
+- Agent marketplace
+- Extension system
 
-Current Status
+---
 
-TangkuAgentOS is under active development.
+# 🏗️ Architecture
 
-The project is evolving toward a production-grade architecture, and contributors are welcome to help improve individual modules.
-
-Contributing
-
-We welcome contributions of all sizes.
-
-Examples include:
-
-- Bug fixes
-- Documentation
-- New runtimes
-- AI providers
-- Agent improvements
-- Testing
-- Performance improvements
-- UI improvements
-
-Before starting significant work, please open an Issue to discuss your proposal.
-
-Roadmap
-
-Current priorities include:
-
-- Stable boot process
-- Runtime Manager
-- AI Kernel
-- Provider Runtime
-- Memory Runtime
-- Workflow Runtime
-- Agent Ecosystem Runtime
-- Plugin Runtime
-- Health Monitoring
-- Developer Experience
-
-License
-
-This project is released under the MIT License.
+TangkuAgentOS is designed around modular runtimes:
