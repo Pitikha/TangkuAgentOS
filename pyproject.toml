@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tangku-agentos"
+version = "1.0.0b2"
+description = "Tangku AgentOS production runtime and interface platform"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Tangku AgentOS Contributors" }]
+keywords = ["agent", "automation", "workflow", "provider", "runtime"]
+urls = { Homepage = "https://github.com/gauryat/TangkuAgentOS", Repository = "https://github.com/gauryat/TangkuAgentOS" }
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.optional-dependencies]
+development = ["pytest>=8", "build>=1.0"]
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tangku_agentos*"]
