@@ -625,6 +625,198 @@ class LocalModelProvider(BaseProvider):
         )
 
 
+# --- New Providers for Phase 8 ---
+
+
+class XAIProvider(BaseProvider):
+    """xAI provider implementation."""
+
+    def __init__(
+        self,
+        provider_id: ProviderID = ProviderID.XAI.value,
+        settings: Optional[ProviderSettings] = None,
+    ) -> None:
+        headers = {}
+        if settings and "api_key" in settings:
+            headers["Authorization"] = f"Bearer {settings['api_key']}"
+        super().__init__(
+            provider_id=provider_id,
+            settings=settings,
+            base_url=settings.get("base_url", "https://api.x.ai/v1") if settings else "https://api.x.ai/v1",
+            headers=headers,
+        )
+
+    @property
+    def capabilities(self) -> Dict[ProviderCapability, bool]:
+        return {
+            ProviderCapability.CHAT: True,
+            ProviderCapability.STREAMING: True,
+            ProviderCapability.REASONING: True,
+        }
+
+    def _build_payload(self, request: ProviderRequest) -> Tuple[str, Dict[str, Any]]:
+        return (
+            f"{self.base_url}/chat/completions",
+            {
+                "model": request.parameters.get("model", "grok-1"),
+                "messages": _build_messages(request.input),
+                **request.parameters,
+                **({"stream": True} if request.stream else {}),
+            },
+        )
+
+
+class CerebrasProvider(BaseProvider):
+    """Cerebras provider implementation."""
+
+    def __init__(
+        self,
+        provider_id: ProviderID = ProviderID.CEREBRAS.value,
+        settings: Optional[ProviderSettings] = None,
+    ) -> None:
+        headers = {}
+        if settings and "api_key" in settings:
+            headers["Authorization"] = f"Bearer {settings['api_key']}"
+        super().__init__(
+            provider_id=provider_id,
+            settings=settings,
+            base_url=settings.get("base_url", "https://api.cerebras.net/v1") if settings else "https://api.cerebras.net/v1",
+            headers=headers,
+        )
+
+    @property
+    def capabilities(self) -> Dict[ProviderCapability, bool]:
+        return {
+            ProviderCapability.CHAT: True,
+            ProviderCapability.STREAMING: True,
+        }
+
+    def _build_payload(self, request: ProviderRequest) -> Tuple[str, Dict[str, Any]]:
+        return (
+            f"{self.base_url}/chat/completions",
+            {
+                "model": request.parameters.get("model", "cerebras-llama3-70b"),
+                "messages": _build_messages(request.input),
+                **request.parameters,
+                **({"stream": True} if request.stream else {}),
+            },
+        )
+
+
+class HuggingFaceProvider(BaseProvider):
+    """Hugging Face Inference provider implementation."""
+
+    def __init__(
+        self,
+        provider_id: ProviderID = ProviderID.HUGGINGFACE.value,
+        settings: Optional[ProviderSettings] = None,
+    ) -> None:
+        headers = {}
+        if settings and "api_key" in settings:
+            headers["Authorization"] = f"Bearer {settings['api_key']}"
+        super().__init__(
+            provider_id=provider_id,
+            settings=settings,
+            base_url=settings.get("base_url", "https://api-inference.huggingface.co/v1") if settings else "https://api-inference.huggingface.co/v1",
+            headers=headers,
+        )
+
+    @property
+    def capabilities(self) -> Dict[ProviderCapability, bool]:
+        return {
+            ProviderCapability.CHAT: True,
+            ProviderCapability.EMBEDDINGS: True,
+            ProviderCapability.STREAMING: True,
+        }
+
+    def _build_payload(self, request: ProviderRequest) -> Tuple[str, Dict[str, Any]]:
+        return (
+            f"{self.base_url}/models/{request.parameters.get('model', 'meta-llama/Llama-3-70b-chat-hf')}",
+            {
+                "inputs": {"prompt": _build_text(request.input)},
+                **request.parameters,
+                **({"stream": True} if request.stream else {}),
+            },
+        )
+
+
+class VertexAIProvider(BaseProvider):
+    """Google Vertex AI provider implementation."""
+
+    def __init__(
+        self,
+        provider_id: ProviderID = ProviderID.VERTEX_AI.value,
+        settings: Optional[ProviderSettings] = None,
+    ) -> None:
+        headers = {}
+        if settings and "api_key" in settings:
+            headers["Authorization"] = f"Bearer {settings['api_key']}"
+        region = settings.get("region", "us-central1") if settings else "us-central1"
+        super().__init__(
+            provider_id=provider_id,
+            settings=settings,
+            base_url=f"https://{region}-aiplatform.googleapis.com/v1",
+            headers=headers,
+        )
+
+    @property
+    def capabilities(self) -> Dict[ProviderCapability, bool]:
+        return {
+            ProviderCapability.CHAT: True,
+            ProviderCapability.EMBEDDINGS: True,
+            ProviderCapability.VISION: True,
+            ProviderCapability.STREAMING: True,
+        }
+
+    def _build_payload(self, request: ProviderRequest) -> Tuple[str, Dict[str, Any]]:
+        model = request.parameters.get("model", "gemini-1.5-pro")
+        return (
+            f"{self.base_url}/projects/{settings.get('project_id', '')}/locations/{settings.get('region', 'us-central1')}/publishers/google/models/{model}:predict",
+            {
+                "instances": [{"content": _build_text(request.input)}],
+                **request.parameters,
+            },
+        )
+
+
+class AWSBedrockProvider(BaseProvider):
+    """AWS Bedrock provider implementation."""
+
+    def __init__(
+        self,
+        provider_id: ProviderID = ProviderID.AWS_BEDROCK.value,
+        settings: Optional[ProviderSettings] = None,
+    ) -> None:
+        headers = {}
+        if settings and "api_key" in settings:
+            headers["Authorization"] = f"Bearer {settings['api_key']}"
+        region = settings.get("region", "us-east-1") if settings else "us-east-1"
+        super().__init__(
+            provider_id=provider_id,
+            settings=settings,
+            base_url=f"https://bedrock-runtime.{region}.amazonaws.com",
+            headers=headers,
+        )
+
+    @property
+    def capabilities(self) -> Dict[ProviderCapability, bool]:
+        return {
+            ProviderCapability.CHAT: True,
+            ProviderCapability.EMBEDDINGS: True,
+            ProviderCapability.STREAMING: True,
+        }
+
+    def _build_payload(self, request: ProviderRequest) -> Tuple[str, Dict[str, Any]]:
+        model_id = request.parameters.get("model", "anthropic.claude-3-sonnet-20240229-v1:0")
+        return (
+            f"{self.base_url}/model/{model_id}/invoke",
+            {
+                "prompt": _build_text(request.input),
+                **request.parameters,
+            },
+        )
+
+
 class CustomProvider(BaseProvider):
     """Custom provider implementation for unsupported providers."""
 
