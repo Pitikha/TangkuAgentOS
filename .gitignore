@@ -1,14 +1,73 @@
+# Python
 .venv/
+venv/
+ENV/
+env/
+
+# Build and distribution
 build/
 dist/
 *.egg-info/
+*.egg
+
+# Bytecode and cache
 __pycache__/
 *.py[cod]
 *.pyo
+*pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Logs and temporary files
 *.log
 *.tmp
-*.zip
+*.swp
+*.swo
+*~
+
+# OS-specific files
 .DS_Store
-pytest_cache/
-*/__pycache__/
-.testrunner.cfg
+Thumbs.db
+
+# IDE-specific files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Data directories
+/data/
+!/.gitkeep
+
+# Configuration files (keep .env.example and config.yaml.example)
+config.yaml
+!config.yaml.example
+
+# Database files
+*.db
+*.sqlite
+
+# Virtual environment
+.env/
+
+# Test files
+.pytest_cache/
+.coverage
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Misc
+*.zip
+*.tar.gz
+*.rar
