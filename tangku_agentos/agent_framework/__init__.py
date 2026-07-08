@@ -1,39 +1,20 @@
-from .agents import (
-    CodingAgent,
-    KnowledgeAgent,
-    MemoryAgent,
-    ModelAgent,
-    PlanningAgent,
-    ResearchAgent,
-    SupervisorAgent,
-    ToolAgent,
-    WorkspaceAgent,
-)
-from .base import BaseSpecializedAgent
-from .collaboration import AgentCollaborationManager
-from .demo import run_end_to_end_demo
-from .execution import ExecutionPlan, ExecutionStep, TaskExecutionEngine
-from .models import AgentConfiguration, AgentHealth, AgentMetadata, AgentProfile, AgentStatistics
+"""Agent Framework module for TangkuAgentOS.
+
+This module provides the core functionality for managing agents, their execution,
+collaboration, and models within the TangkuAgentOS ecosystem.
+"""
+
+from .agents import BaseAgent, Agent
+from .base import AgentBase
+from .collaboration import AgentCollaboration
+from .execution import AgentExecutor
+from .models import AgentModel
 
 __all__ = [
-    "AgentCollaborationManager",
-    "AgentConfiguration",
-    "AgentHealth",
-    "AgentMetadata",
-    "AgentProfile",
-    "AgentStatistics",
-    "BaseSpecializedAgent",
-    "ExecutionPlan",
-    "ExecutionStep",
-    "TaskExecutionEngine",
-    "run_end_to_end_demo",
-    "CodingAgent",
-    "KnowledgeAgent",
-    "MemoryAgent",
-    "ModelAgent",
-    "PlanningAgent",
-    "ResearchAgent",
-    "SupervisorAgent",
-    "ToolAgent",
-    "WorkspaceAgent",
+    "BaseAgent",
+    "Agent",
+    "AgentBase",
+    "AgentCollaboration",
+    "AgentExecutor",
+    "AgentModel",
 ]
