@@ -17,38 +17,116 @@ Example usage:
     from tangku_agentos.runtime_communication.integration import (
         BaseRuntime,
         RuntimeCommunicator,
+        RuntimeLifecycleManager,
         SystemEvents,
         SystemCommands,
         SystemQueries,
+        LegacyRuntimeAdapter,
+        RuntimeCompatibilityLayer,
+        RuntimeIntegrationRegistry,
     )
+
+Architecture:
+    The integration layer ensures that:
+    1. All runtimes communicate ONLY through the Runtime Communication Framework
+    2. No runtime directly calls another runtime
+    3. All communication goes through the appropriate bus (MessageBus, EventBus, etc.)
+    4. Standard events, commands, and queries are used for system-level communication
+    5. Backward compatibility is maintained for existing runtimes
 """
 
+# Base classes
 from tangku_agentos.runtime_communication.integration.base import (
     BaseRuntime,
     RuntimeCommunicator,
     RuntimeLifecycleManager,
+    RuntimeConfig,
+    RuntimeCapabilities,
+    RuntimeState,
+    RuntimeError,
+    RuntimeInitializationError,
+    RuntimeStartupError,
+    RuntimeShutdownError,
+    RuntimePauseError,
+    RuntimeResumeError,
+    RuntimeRestartError,
+    RuntimeRegistrationError,
 )
-from tangku_agentos.runtime_communication.integration.events import SystemEvents
-from tangku_agentos.runtime_communication.integration.commands import SystemCommands
-from tangku_agentos.runtime_communication.integration.queries import SystemQueries
+
+# Standard system events
+from tangku_agentos.runtime_communication.integration.events import (
+    SystemEvent,
+    SystemEvents,
+)
+
+# Standard system commands
+from tangku_agentos.runtime_communication.integration.commands import (
+    SystemCommand,
+    SystemCommands,
+)
+
+# Standard system queries
+from tangku_agentos.runtime_communication.integration.queries import (
+    SystemQuery,
+    SystemQueries,
+)
+
+# Backward compatibility adapters
 from tangku_agentos.runtime_communication.integration.adapters import (
+    LegacyMessage,
+    LegacyCommand,
+    LegacyQuery,
+    MessageAdapter,
+    CommandAdapter,
+    QueryAdapter,
     LegacyRuntimeAdapter,
     RuntimeCompatibilityLayer,
 )
-from tangku_agentos.runtime_communication.integration.registry import RuntimeIntegrationRegistry
+
+# Integration registry
+from tangku_agentos.runtime_communication.integration.registry import (
+    RuntimeIntegrationRegistry,
+    RuntimeIntegrationStatus,
+    RuntimeIntegrationInfo,
+)
 
 __all__ = [
     # Base classes
     "BaseRuntime",
     "RuntimeCommunicator",
     "RuntimeLifecycleManager",
-    # System definitions
+    "RuntimeConfig",
+    "RuntimeCapabilities",
+    "RuntimeState",
+    # Exceptions
+    "RuntimeError",
+    "RuntimeInitializationError",
+    "RuntimeStartupError",
+    "RuntimeShutdownError",
+    "RuntimePauseError",
+    "RuntimeResumeError",
+    "RuntimeRestartError",
+    "RuntimeRegistrationError",
+    # System events
+    "SystemEvent",
     "SystemEvents",
+    # System commands
+    "SystemCommand",
     "SystemCommands",
+    # System queries
+    "SystemQuery",
     "SystemQueries",
     # Adapters
+    "LegacyMessage",
+    "LegacyCommand",
+    "LegacyQuery",
+    "MessageAdapter",
+    "CommandAdapter",
+    "QueryAdapter",
     "LegacyRuntimeAdapter",
     "RuntimeCompatibilityLayer",
     # Registry
     "RuntimeIntegrationRegistry",
+    "RuntimeIntegrationStatus",
+    "RuntimeIntegrationInfo",
 ]
