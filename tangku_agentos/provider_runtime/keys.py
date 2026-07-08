@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 from .constants import (
     DEFAULT_STORAGE_PATH,
+    TANGKU_ENCRYPTION_KEY,
     TANGKU_PROVIDER_DEFAULT_KEY,
     TANGKU_PROVIDER_KEY_PREFIX,
     TANGKU_PROVIDER_KEY_SUFFIX,
@@ -28,6 +29,16 @@ from .exceptions import (
     KeyNotFoundError,
     KeyStorageError,
 )
+
+
+# --- Encryption Backend ---
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
 
 
 @dataclass
@@ -71,7 +82,7 @@ class SecureKeyStorage:
 
     def _get_encryption_key(self) -> bytes:
         """Get or generate the encryption key."""
-        env_key = os.environ.get("TANGKU_KEY_ENCRYPTION_KEY")
+        env_key = os.environ.get(TANGKU_ENCRYPTION_KEY)
         if env_key:
             return hashlib.sha256(env_key.encode()).digest()
         return hashlib.sha256("tangku-provider-runtime".encode()).digest()
@@ -79,14 +90,20 @@ class SecureKeyStorage:
     def _encrypt(self, value: str) -> str:
         """Encrypt a value using XOR with the encryption key."""
         encoded = value.encode("utf-8")
-        encrypted = bytes(b ^ self._encryption_key[i % len(self._encryption_key)] for i, b in enumerate(encoded))
+        encrypted = bytes(
+            b ^ self._encryption_key[i % len(self._encryption_key)]
+            for i, b in enumerate(encoded)
+        )
         return base64.b64encode(encrypted).decode("utf-8")
 
     def _decrypt(self, value: str) -> str:
         """Decrypt a value using XOR with the encryption key."""
         try:
             encrypted = base64.b64decode(value.encode("utf-8"))
-            decrypted = bytes(b ^ self._encryption_key[i % len(self._encryption_key)] for i, b in enumerate(encrypted))
+            decrypted = bytes(
+                b ^ self._encryption_key[i % len(self._encryption_key)]
+                for i, b in enumerate(encrypted)
+            )
             return decrypted.decode("utf-8")
         except Exception as e:
             raise KeyEncryptionError(f"Failed to decrypt key: {e}") from e
@@ -240,7 +257,10 @@ class SecureKeyStorage:
         """Check if a provider has any active keys."""
         with self._lock:
             entries = self._keys.get(provider_id, [])
-            return any(entry.is_active and (entry.expires_at is None or entry.expires_at > time.time()) for entry in entries)
+            return any(
+                entry.is_active and (entry.expires_at is None or entry.expires_at > time.time())
+                for entry in entries
+            )
 
     def _record_usage(self, entry: APIKeyEntry) -> None:
         """Record usage of a key."""
@@ -320,10 +340,204 @@ class EnvironmentKeyResolver:
     @staticmethod
     def resolve(provider_id: ProviderID) -> Optional[APIKey]:
         """Resolve an API key from environment variables."""
-        env_key = os.environ.get(f"{TANGKU_PROVIDER_KEY_PREFIX}{provider_id.upper()}{TANGKU_PROVIDER_KEY_SUFFIX}")
+        env_key = os.environ.get(
+            f"{TANGKU_PROVIDER_KEY_PREFIX}{provider_id.upper()}{TANGKU_PROVIDER_KEY_SUFFIX}"
+        )
         if env_key:
             return env_key
         return os.environ.get(TANGKU_PROVIDER_DEFAULT_KEY)
+
+
+# --- AES-256 Encryption Backend ---
+
+
+class AES256KeyStorage(SecureKeyStorage):
+    """
+    Secure storage backend for API keys using AES-256-GCM encryption.
+    Requires the `cryptography` library.
+    """
+
+    def __init__(self, storage_path: Optional[str] = None) -> None:
+        if not CRYPTOGRAPHY_AVAILABLE:
+            raise ImportError(
+                "The 'cryptography' library is required for AES-256 encryption. "
+                "Install it with: pip install cryptography"
+            )
+        super().__init__(storage_path)
+        self._fernet = self._get_fernet()
+
+    def _get_fernet(self) -> Any:
+        """Get or generate a Fernet key for encryption."""
+        env_key = os.environ.get(TANGKU_ENCRYPTION_KEY)
+        if env_key:
+            return Fernet(Fernet.generate_key() if env_key == "generate" else env_key.encode())
+        return Fernet(Fernet.generate_key())
+
+    def _encrypt(self, value: str) -> str:
+        """Encrypt a value using AES-256-GCM."""
+        return self._fernet.encrypt(value.encode()).decode()
+
+    def _decrypt(self, value: str) -> str:
+        """Decrypt a value using AES-256-GCM."""
+        try:
+            return self._fernet.decrypt(value.encode()).decode()
+        except Exception as e:
+            raise KeyEncryptionError(f"Failed to decrypt key: {e}") from e
+
+
+# --- Secret Manager Backends ---
+
+
+class SecretManagerBackend:
+    """Base class for secret manager backends."""
+
+    def get_secret(self, secret_name: str) -> Optional[str]:
+        """Get a secret from the secret manager."""
+        raise NotImplementedError("Subclasses must implement get_secret")
+
+
+class AWSSecretsManagerBackend(SecretManagerBackend):
+    """AWS Secrets Manager backend for API keys."""
+
+    def __init__(self, region: str = "us-east-1") -> None:
+        self.region = region
+        try:
+            import boto3
+            self.client = boto3.client("secretsmanager", region_name=region)
+        except ImportError:
+            self.client = None
+
+    def get_secret(self, secret_name: str) -> Optional[str]:
+        """Get a secret from AWS Secrets Manager."""
+        if self.client is None:
+            return None
+        try:
+            response = self.client.get_secret_value(SecretId=secret_name)
+            return response.get("SecretString")
+        except Exception:
+            return None
+
+
+class HashiCorpVaultBackend(SecretManagerBackend):
+    """HashiCorp Vault backend for API keys."""
+
+    def __init__(self, url: str = "http://127.0.0.1:8200", token: Optional[str] = None) -> None:
+        self.url = url
+        self.token = token or os.environ.get("VAULT_TOKEN")
+        try:
+            import hvac
+            self.client = hvac.Client(url=url, token=token)
+        except ImportError:
+            self.client = None
+
+    def get_secret(self, secret_path: str) -> Optional[str]:
+        """Get a secret from HashiCorp Vault."""
+        if self.client is None:
+            return None
+        try:
+            response = self.client.secrets.kv.v2.read_secret_version(
+                path=secret_path
+            )
+            return response.get("data", {}).get("data", {}).get("api_key")
+        except Exception:
+            return None
+
+
+# --- Quota Monitoring ---
+
+
+class QuotaMonitor:
+    """Monitors API key usage and quotas."""
+
+    def __init__(self) -> None:
+        self._usage: Dict[str, Dict[str, Any]] = {}
+        self._quotas: Dict[str, Dict[str, Any]] = {}
+        self._lock = RLock()
+
+    def set_quota(
+        self, provider_id: str, max_requests: int, max_tokens: int, max_cost: float
+    ) -> None:
+        """Set a quota for a provider."""
+        with self._lock:
+            self._quotas[provider_id] = {
+                "max_requests": max_requests,
+                "max_tokens": max_tokens,
+                "max_cost": max_cost,
+            }
+
+    def record_usage(
+        self, provider_id: str, requests: int = 1, tokens: int = 0, cost: float = 0.0
+    ) -> None:
+        """Record usage for a provider."""
+        with self._lock:
+            if provider_id not in self._usage:
+                self._usage[provider_id] = {
+                    "total_requests": 0,
+                    "total_tokens": 0,
+                    "total_cost": 0.0,
+                }
+            self._usage[provider_id]["total_requests"] += requests
+            self._usage[provider_id]["total_tokens"] += tokens
+            self._usage[provider_id]["total_cost"] += cost
+
+    def get_usage(self, provider_id: str) -> Dict[str, Any]:
+        """Get usage for a provider."""
+        return self._usage.get(provider_id, {})
+
+    def get_quota_status(self, provider_id: str) -> Dict[str, Any]:
+        """Get quota status for a provider."""
+        usage = self.get_usage(provider_id)
+        quota = self._quotas.get(provider_id, {})
+        return {
+            "usage": usage,
+            "quota": quota,
+            "requests_remaining": quota.get("max_requests", 0) - usage.get("total_requests", 0),
+            "tokens_remaining": quota.get("max_tokens", 0) - usage.get("total_tokens", 0),
+            "cost_remaining": quota.get("max_cost", 0.0) - usage.get("total_cost", 0.0),
+        }
+
+    def is_within_quota(self, provider_id: str) -> bool:
+        """Check if a provider is within its quota."""
+        status = self.get_quota_status(provider_id)
+        return (
+            status["requests_remaining"] > 0
+            and status["tokens_remaining"] > 0
+            and status["cost_remaining"] > 0
+        )
+
+
+# --- Key Rotation ---
+
+
+class KeyRotator:
+    """Automatically rotates API keys based on usage or expiration."""
+
+    def __init__(self, storage: SecureKeyStorage) -> None:
+        self._storage = storage
+        self._lock = RLock()
+
+    def rotate_if_needed(
+        self, provider_id: str, max_usage: int = 1000, max_age_days: int = 30
+    ) -> Optional[str]:
+        """Rotate a key if it exceeds usage or age limits."""
+        with self._lock:
+            usage = self._storage.get_usage(provider_id)
+            if usage and usage.request_count >= max_usage:
+                return self._rotate_key(provider_id)
+            entries = self._storage._keys.get(provider_id, [])
+            for entry in entries:
+                if entry.expires_at and (entry.expires_at - time.time()) < (max_age_days * 86400):
+                    return self._rotate_key(provider_id)
+            return None
+
+    def _rotate_key(self, provider_id: str) -> str:
+        """Rotate a key for a provider."""
+        old_key = self._storage.get_key(provider_id)
+        if old_key is None:
+            raise KeyNotFoundError(f"No key found for provider {provider_id}")
+        new_key = secrets.token_urlsafe(32)
+        self._storage.rotate_key(provider_id, old_key, new_key)
+        return new_key
 
 
 class ProviderKeyManager:
@@ -332,9 +546,18 @@ class ProviderKeyManager:
     Combines secure storage, environment resolution, and usage tracking.
     """
 
-    def __init__(self, storage_path: Optional[str] = None) -> None:
-        self._storage = SecureKeyStorage(storage_path)
+    def __init__(
+        self,
+        storage_path: Optional[str] = None,
+        use_aes: bool = False,
+    ) -> None:
+        if use_aes and CRYPTOGRAPHY_AVAILABLE:
+            self._storage: SecureKeyStorage = AES256KeyStorage(storage_path)
+        else:
+            self._storage = SecureKeyStorage(storage_path)
         self._env_resolver = EnvironmentKeyResolver()
+        self._quota_monitor = QuotaMonitor()
+        self._key_rotator = KeyRotator(self._storage)
 
     def save_key(
         self,
@@ -385,6 +608,7 @@ class ProviderKeyManager:
     ) -> None:
         """Record usage of a key."""
         self._storage.record_usage(provider_id, tokens, cost)
+        self._quota_monitor.record_usage(provider_id, 1, tokens, cost)
 
     def get_usage(self, provider_id: ProviderID) -> Optional[KeyUsage]:
         """Get usage statistics for a provider's key."""
@@ -398,3 +622,19 @@ class ProviderKeyManager:
         """Mask the key for a provider."""
         key = self.get_key(provider_id)
         return self._storage.mask_key(key)
+
+    def set_quota(
+        self, provider_id: str, max_requests: int, max_tokens: int, max_cost: float
+    ) -> None:
+        """Set a quota for a provider."""
+        self._quota_monitor.set_quota(provider_id, max_requests, max_tokens, max_cost)
+
+    def get_quota_status(self, provider_id: str) -> Dict[str, Any]:
+        """Get quota status for a provider."""
+        return self._quota_monitor.get_quota_status(provider_id)
+
+    def rotate_if_needed(
+        self, provider_id: str, max_usage: int = 1000, max_age_days: int = 30
+    ) -> Optional[str]:
+        """Rotate a key if it exceeds usage or age limits."""
+        return self._key_rotator.rotate_if_needed(provider_id, max_usage, max_age_days)
