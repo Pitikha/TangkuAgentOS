@@ -8,13 +8,17 @@ data used by the cognitive engines.
 
 from tangku_agentos.cognitive_system.models.cognitive_input import CognitiveInput
 from tangku_agentos.cognitive_system.models.cognitive_output import CognitiveOutput
-from tangku_agentos.cognitive_system.models.cognitive_context import CognitiveContext
-from tangku_agentos.cognitive_system.models.memory_entry import MemoryEntry
-from tangku_agentos.cognitive_system.models.knowledge_query import KnowledgeQuery
-from tangku_agentos.cognitive_system.models.reasoning_result import ReasoningResult
-from tangku_agentos.cognitive_system.models.planning_result import PlanningResult
-from tangku_agentos.cognitive_system.models.decision_result import DecisionResult
-from tangku_agentos.cognitive_system.models.action_plan import ActionPlan
+from tangku_agentos.cognitive_system.models.other_models import (
+    MemoryEntry,
+    KnowledgeQuery,
+    ReasoningResult,
+    PlanningResult,
+    DecisionResult,
+    ActionPlan,
+)
+
+# For backward compatibility, also import CognitiveContext from core
+from tangku_agentos.cognitive_system.core.cognitive_state import CognitiveContext
 
 __all__ = [
     "CognitiveInput",
