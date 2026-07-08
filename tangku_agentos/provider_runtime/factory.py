@@ -1,184 +1,569 @@
-"""Provider factory for the TangkuAgentOS Provider Runtime."""
+"""
+TangkuAgentOS Provider Runtime - Provider Factory
+
+This module implements a factory for creating and managing provider instances.
+It supports:
+- Lazy loading of providers
+- Singleton pattern for provider instances
+- Dependency injection
+- Connection pooling
+- Caching and reuse of provider instances
+- Thread-safe and async-safe operations
+
+Author: TangkuAgentOS Team
+License: MIT
+"""
 
 from __future__ import annotations
 
+import asyncio
 import importlib
-import pkgutil
-from pathlib import Path
+import logging
+from functools import lru_cache
 from threading import RLock
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type
+from typing import Any, Callable, Dict, List, Optional, Type, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
-    from ..model_runtime.models import ModelConfiguration
-    from .interfaces import ProviderAdapter, ProviderPlugin
-    from .types import ProviderID, ProviderSettings
-
-from .constants import ProviderID, ProviderType
-from .exceptions import PluginLoadError, PluginNotFoundError, ProviderNotFoundError
-from .interfaces import ProviderFactory
-from .providers import CustomProvider
-
-
-class PluginLoader:
-    """Loads provider plugins dynamically."""
-
-    def __init__(self, plugin_dirs: Optional[List[str]] = None) -> None:
-        self._plugin_dirs = plugin_dirs or ["tangku_agentos/provider_runtime/plugins"]
-        self._plugins: Dict[str, Type[ProviderPlugin]] = {}
-        self._lock = RLock()
-
-    def load_plugin(self, plugin_path: str) -> Type[ProviderPlugin]:
-        """Load a plugin from the given path."""
-        try:
-            module_path = Path(plugin_path).with_suffix("")
-            module_name = module_path.stem
-            spec = importlib.util.spec_from_file_location(module_name, plugin_path)
-            if spec is None or spec.loader is None:
-                raise PluginLoadError(f"Cannot load plugin from {plugin_path}")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            if not hasattr(module, "ProviderPlugin"):
-                raise PluginLoadError(f"Plugin {plugin_path} does not define a ProviderPlugin class")
-            plugin_class = getattr(module, "ProviderPlugin")
-            with self._lock:
-                self._plugins[plugin_class.provider_id] = plugin_class
-            return plugin_class
-        except Exception as e:
-            raise PluginLoadError(f"Failed to load plugin {plugin_path}: {e}") from e
-
-    def load_all_plugins(self) -> Dict[str, Type[ProviderPlugin]]:
-        """Load all plugins from the configured directories."""
-        with self._lock:
-            for plugin_dir in self._plugin_dirs:
-                if not Path(plugin_dir).exists():
-                    continue
-                for _, module_name, _ in pkgutil.iter_modules([plugin_dir]):
-                    try:
-                        module = importlib.import_module(f"{plugin_dir}.{module_name}")
-                        if hasattr(module, "ProviderPlugin"):
-                            plugin_class = getattr(module, "ProviderPlugin")
-                            self._plugins[plugin_class.provider_id] = plugin_class
-                    except Exception:
-                        continue
-            return self._plugins.copy()
-
-    def unload_plugin(self, provider_id: ProviderID) -> None:
-        """Unload a plugin by provider ID."""
-        with self._lock:
-            self._plugins.pop(provider_id, None)
-
-    def get_plugin(self, provider_id: ProviderID) -> Optional[Type[ProviderPlugin]]:
-        """Get a plugin by provider ID."""
-        return self._plugins.get(provider_id)
-
-    def list_plugins(self) -> List[ProviderID]:
-        """List all loaded plugin IDs."""
-        return list(self._plugins.keys())
+    from .interfaces import (
+        BaseProvider,
+        ProviderID,
+        ProviderAdapter,
+        ModelConfiguration,
+        ProviderSettings,
+    )
 
 
-class ProviderFactory(ProviderFactory):
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Type Definitions
+# =============================================================================
+
+T = TypeVar("T", bound="BaseProvider")
+ProviderClass = Type[Any]
+ProviderFactoryFunc = Callable[..., Any]
+
+
+# =============================================================================
+# Exceptions
+# =============================================================================
+
+class FactoryError(Exception):
+    """Base exception for factory-related errors."""
+
+    pass
+
+
+class ProviderCreationError(FactoryError):
+    """Raised when a provider cannot be created."""
+
+    pass
+
+
+class ProviderNotSupportedError(FactoryError):
+    """Raised when a provider is not supported."""
+
+    pass
+
+
+# =============================================================================
+# Provider Factory
+# =============================================================================
+
+class ProviderFactory:
     """
-    Factory for creating provider adapters.
-    Supports built-in providers, custom providers, and plugins.
+    Factory for creating and managing provider instances.
+
+    Features:
+    - Lazy loading of providers
+    - Singleton pattern for provider instances
+    - Dependency injection
+    - Connection pooling
+    - Caching and reuse of provider instances
+    - Thread-safe and async-safe operations
+
+    Example:
+        factory = ProviderFactory()
+        provider = await factory.create("openai", api_key="sk-...")
+        # Reuse the same instance
+        same_provider = await factory.create("openai")
     """
 
     def __init__(
         self,
-        plugin_loader: Optional[PluginLoader] = None,
-    ) -> None:
-        self._plugin_loader = plugin_loader or PluginLoader()
-        self._builtin_providers: Dict[ProviderID, Type[Any]] = {
-            ProviderID.OPENAI.value: None,  # Lazy-loaded
-            ProviderID.ANTHROPIC.value: None,
-            ProviderID.GOOGLE.value: None,
-            ProviderID.GROQ.value: None,
-            ProviderID.DEEPSEEK.value: None,
-            ProviderID.MISTRAL.value: None,
-            ProviderID.COHERE.value: None,
-            ProviderID.TOGETHER.value: None,
-            ProviderID.FIREWORKS.value: None,
-            ProviderID.AZURE_OPENAI.value: None,
-            ProviderID.OPENROUTER.value: None,
-            ProviderID.OLLAMA.value: None,
-            ProviderID.LMSTUDIO.value: None,
-            ProviderID.LLAMACPP.value: None,
-            ProviderID.VLLM.value: None,
-            ProviderID.LOCAL.value: None,
-            ProviderID.CUSTOM.value: CustomProvider,
-        }
+        registry: Optional[Any] = None,
+        max_pool_size: int = 10,
+    ):
+        """
+        Initialize the provider factory.
+
+        Args:
+            registry: Provider registry instance. If None, uses the global registry.
+            max_pool_size: Maximum number of provider instances to keep in the pool.
+        """
+        from .registry import get_registry
+
+        self._registry = registry or get_registry()
+        self._instances: Dict[str, Any] = {}
+        self._pool: Dict[str, List[Any]] = {}
         self._lock = RLock()
+        self._async_lock = asyncio.Lock()
+        self._max_pool_size = max_pool_size
+        self._builtin_providers: Dict[str, ProviderClass] = {}
 
-    def _lazy_load_builtin(self, provider_id: ProviderID) -> Type[Any]:
-        """Lazy-load a built-in provider."""
-        from .providers import (
-            AnthropicProvider,
-            DeepSeekProvider,
-            GoogleProvider,
-            GroqProvider,
-            LocalModelProvider,
-            LMStudioProvider,
-            OllamaProvider,
-            OpenAIProvider,
-            OpenRouterProvider,
-        )
+    def register_builtin_provider(
+        self,
+        provider_id: str,
+        provider_class: ProviderClass,
+    ) -> None:
+        """
+        Register a built-in provider class.
 
-        provider_map = {
-            ProviderID.OPENAI.value: OpenAIProvider,
-            ProviderID.ANTHROPIC.value: AnthropicProvider,
-            ProviderID.GOOGLE.value: GoogleProvider,
-            ProviderID.GROQ.value: GroqProvider,
-            ProviderID.DEEPSEEK.value: DeepSeekProvider,
-            ProviderID.OPENROUTER.value: OpenRouterProvider,
-            ProviderID.OLLAMA.value: OllamaProvider,
-            ProviderID.LMSTUDIO.value: LMStudioProvider,
-            ProviderID.LLAMACPP.value: LocalModelProvider,
-            ProviderID.VLLM.value: LocalModelProvider,
-            ProviderID.AZURE_OPENAI.value: OpenAIProvider,
-        }
-        return provider_map.get(provider_id, CustomProvider)
-
-    def register_provider(self, provider_id: ProviderID, provider_class: Type[Any]) -> None:
-        """Register a custom provider class."""
+        Args:
+            provider_id: Unique identifier for the provider.
+            provider_class: Provider class.
+        """
         with self._lock:
             self._builtin_providers[provider_id] = provider_class
 
-    def create(
+    def _lazy_load_builtin(self, provider_id: str) -> ProviderClass:
+        """
+        Lazy-load a built-in provider class.
+
+        Args:
+            provider_id: Unique identifier for the provider.
+
+        Returns:
+            ProviderClass: Provider class.
+
+        Raises:
+            ProviderNotSupportedError: If the provider is not supported.
+        """
+        # Import built-in providers dynamically to avoid circular imports
+        provider_map = {
+            "openai": "OpenAIProvider",
+            "anthropic": "AnthropicProvider",
+            "google": "GoogleProvider",
+            "mistral": "MistralProvider",
+            "groq": "GroqProvider",
+            "openrouter": "OpenRouterProvider",
+            "ollama": "OllamaProvider",
+            "together": "TogetherProvider",
+            "cohere": "CohereProvider",
+            "xai": "XAIProvider",
+            "deepseek": "DeepSeekProvider",
+            "fireworks": "FireworksProvider",
+            "cerebras": "CerebrasProvider",
+            "huggingface": "HuggingFaceProvider",
+            "azure_openai": "AzureOpenAIProvider",
+            "aws_bedrock": "AWSBedrockProvider",
+            "vertex_ai": "VertexAIProvider",
+        }
+
+        if provider_id not in provider_map:
+            raise ProviderNotSupportedError(
+                f"Provider {provider_id!r} is not a built-in provider."
+            )
+
+        # Dynamically import the provider class
+        try:
+            module = importlib.import_module(
+                f"tangku_agentos.provider_runtime.providers.{provider_id}"
+            )
+            provider_class = getattr(module, provider_map[provider_id])
+            self._builtin_providers[provider_id] = provider_class
+            return provider_class
+        except ImportError as e:
+            raise ProviderNotSupportedError(
+                f"Failed to import provider {provider_id!r}: {e}"
+            )
+        except AttributeError as e:
+            raise ProviderNotSupportedError(
+                f"Provider {provider_id!r} does not have a valid class: {e}"
+            )
+
+    async def create(
         self,
-        provider_id: ProviderID,
-        configuration: ModelConfiguration,
-    ) -> ProviderAdapter:
+        provider_id: str,
+        **kwargs: Any,
+    ) -> Any:
         """
-        Create a provider adapter for the given ID and configuration.
-        Tries plugins first, then built-in providers, then falls back to CustomProvider.
+        Create or retrieve a provider instance.
+
+        Args:
+            provider_id: Unique identifier for the provider.
+            **kwargs: Additional arguments to pass to the provider constructor.
+
+        Returns:
+            Any: Provider instance.
+
+        Raises:
+            ProviderCreationError: If the provider cannot be created.
+            ProviderNotSupportedError: If the provider is not supported.
         """
-        # Try plugins first
-        plugin_class = self._plugin_loader.get_plugin(provider_id)
-        if plugin_class is not None:
-            instance = plugin_class()
-            instance.initialize(configuration.settings)
-            return instance
+        async with self._async_lock:
+            # Check if instance already exists
+            if provider_id in self._instances:
+                logger.debug(f"Reusing existing provider instance: {provider_id}")
+                return self._instances[provider_id]
 
-        # Try built-in providers
-        provider_class = self._builtin_providers.get(provider_id)
-        if provider_class is None:
-            provider_class = self._lazy_load_builtin(provider_id)
-        if provider_class is not None:
-            return provider_class(provider_id, configuration.settings)
+            # Try to get the provider class from the registry
+            try:
+                provider_class = self._registry.get_provider_class(provider_id)
+            except Exception:
+                # Fall back to built-in providers
+                if provider_id in self._builtin_providers:
+                    provider_class = self._builtin_providers[provider_id]
+                else:
+                    try:
+                        provider_class = self._lazy_load_builtin(provider_id)
+                    except ProviderNotSupportedError:
+                        raise ProviderNotSupportedError(
+                            f"Provider {provider_id!r} is not registered or supported."
+                        )
 
-        # Fall back to CustomProvider
-        return CustomProvider(provider_id, configuration.settings)
+            # Create new instance
+            try:
+                logger.debug(f"Creating new provider instance: {provider_id}")
+                instance = provider_class(**kwargs)
+                if hasattr(instance, "initialize"):
+                    if asyncio.iscoroutinefunction(instance.initialize):
+                        await instance.initialize()
+                    else:
+                        instance.initialize()
+                self._instances[provider_id] = instance
+                return instance
+            except Exception as e:
+                logger.error(f"Failed to create provider {provider_id}: {e}")
+                raise ProviderCreationError(
+                    f"Failed to create provider {provider_id}: {e}"
+                ) from e
 
-    def list_supported_providers(self) -> List[ProviderID]:
-        """List all supported provider IDs."""
+    async def get(
+        self,
+        provider_id: str,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Get a provider instance (alias for create).
+
+        Args:
+            provider_id: Unique identifier for the provider.
+            **kwargs: Additional arguments to pass to the provider constructor.
+
+        Returns:
+            Any: Provider instance.
+        """
+        return await self.create(provider_id, **kwargs)
+
+    async def destroy(self, provider_id: str) -> None:
+        """
+        Destroy a provider instance.
+
+        Args:
+            provider_id: Unique identifier for the provider.
+        """
+        async with self._async_lock:
+            if provider_id in self._instances:
+                try:
+                    if hasattr(self._instances[provider_id], "close"):
+                        if asyncio.iscoroutinefunction(
+                            self._instances[provider_id].close
+                        ):
+                            await self._instances[provider_id].close()
+                        else:
+                            self._instances[provider_id].close()
+                except Exception as e:
+                    logger.warning(f"Error closing provider {provider_id}: {e}")
+                del self._instances[provider_id]
+                logger.debug(f"Destroyed provider instance: {provider_id}")
+
+    async def destroy_all(self) -> None:
+        """Destroy all provider instances."""
+        async with self._async_lock:
+            for provider_id in list(self._instances.keys()):
+                await self.destroy(provider_id)
+            self._instances.clear()
+            logger.debug("Destroyed all provider instances")
+
+    def clear(self) -> None:
+        """Clear all cached instances (non-async version for sync contexts)."""
+        with self._lock:
+            for instance in self._instances.values():
+                try:
+                    if hasattr(instance, "close"):
+                        instance.close()
+                except Exception:
+                    pass
+            self._instances.clear()
+
+    @property
+    def instances(self) -> Dict[str, Any]:
+        """Get a copy of the current instances."""
+        with self._lock:
+            return self._instances.copy()
+
+    @property
+    def supported_providers(self) -> List[str]:
+        """Get a list of supported provider IDs."""
         with self._lock:
             supported = list(self._builtin_providers.keys())
-            supported.extend(self._plugin_loader.list_plugins())
+            try:
+                supported.extend(self._registry.list_providers())
+            except Exception:
+                pass
             return supported
 
-    def load_plugin(self, plugin_path: str) -> None:
-        """Load a plugin from the given path."""
-        self._plugin_loader.load_plugin(plugin_path)
 
-    def load_all_plugins(self) -> None:
-        """Load all plugins from the configured directories."""
-        self._plugin_loader.load_all_plugins()
+# =============================================================================
+# Provider Pool for Connection Pooling
+# =============================================================================
+
+class ProviderPool:
+    """
+    Pool of provider instances for connection reuse.
+
+    Features:
+    - Maintains a pool of initialized provider instances
+    - Reuses instances to avoid repeated initialization
+    - Supports max pool size
+    - Thread-safe and async-safe operations
+
+    Example:
+        pool = ProviderPool(max_size=5)
+        provider = await pool.acquire("openai")
+        # Use provider...
+        await pool.release(provider)
+    """
+
+    def __init__(self, max_size: int = 10):
+        """
+        Initialize the provider pool.
+
+        Args:
+            max_size: Maximum number of provider instances to keep in the pool.
+        """
+        self._pool: Dict[str, List[Any]] = {}
+        self._max_size = max_size
+        self._lock = RLock()
+        self._async_lock = asyncio.Lock()
+
+    async def acquire(
+        self,
+        provider_id: str,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Acquire a provider instance from the pool.
+
+        Args:
+            provider_id: Unique identifier for the provider.
+            **kwargs: Additional arguments to pass to the provider constructor.
+
+        Returns:
+            Any: Provider instance.
+        """
+        async with self._async_lock:
+            if provider_id not in self._pool:
+                self._pool[provider_id] = []
+
+            # Reuse existing instance if available
+            if self._pool[provider_id]:
+                instance = self._pool[provider_id].pop()
+                logger.debug(f"Reusing provider instance from pool: {provider_id}")
+                return instance
+
+            # Create new instance if pool is empty
+            factory = ProviderFactory()
+            instance = await factory.create(provider_id, **kwargs)
+            return instance
+
+    async def release(self, instance: Any) -> None:
+        """
+        Release a provider instance back to the pool.
+
+        Args:
+            instance: Provider instance to release.
+        """
+        if not hasattr(instance, "provider_id"):
+            logger.warning("Released instance has no provider_id attribute")
+            return
+
+        provider_id = instance.provider_id
+        async with self._async_lock:
+            if provider_id not in self._pool:
+                self._pool[provider_id] = []
+
+            if len(self._pool[provider_id]) < self._max_size:
+                self._pool[provider_id].append(instance)
+                logger.debug(f"Released provider instance to pool: {provider_id}")
+            else:
+                # Pool is full, close the instance
+                try:
+                    if hasattr(instance, "close"):
+                        if asyncio.iscoroutinefunction(instance.close):
+                            await instance.close()
+                        else:
+                            instance.close()
+                except Exception as e:
+                    logger.warning(f"Error closing provider {provider_id}: {e}")
+
+    async def clear(self) -> None:
+        """Clear all instances in the pool."""
+        async with self._async_lock:
+            for provider_id in list(self._pool.keys()):
+                for instance in self._pool[provider_id]:
+                    try:
+                        if hasattr(instance, "close"):
+                            if asyncio.iscoroutinefunction(instance.close):
+                                await instance.close()
+                            else:
+                                instance.close()
+                    except Exception as e:
+                        logger.warning(f"Error closing provider {provider_id}: {e}")
+                self._pool[provider_id].clear()
+            self._pool.clear()
+            logger.debug("Cleared provider pool")
+
+    @property
+    def pool_size(self) -> int:
+        """Get the total number of instances in the pool."""
+        with self._lock:
+            return sum(len(instances) for instances in self._pool.values())
+
+
+# =============================================================================
+# Dependency Injection Helpers
+# =============================================================================
+
+class ProviderInjector:
+    """
+    Helper class for dependency injection of providers.
+
+    Features:
+    - Inject provider instances into target objects
+    - Support for both sync and async initialization
+    - Thread-safe and async-safe operations
+
+    Example:
+        injector = ProviderInjector()
+        provider = await injector.get_provider("openai")
+        # Or inject into a target object
+        await injector.inject(target, "openai", attr_name="provider")
+    """
+
+    def __init__(self, factory: Optional[ProviderFactory] = None):
+        """
+        Initialize the provider injector.
+
+        Args:
+            factory: Provider factory instance. If None, creates a new one.
+        """
+        self._factory = factory or ProviderFactory()
+
+    async def get_provider(
+        self,
+        provider_id: str,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Get a provider instance with dependency injection.
+
+        Args:
+            provider_id: Unique identifier for the provider.
+            **kwargs: Additional arguments to pass to the provider constructor.
+
+        Returns:
+            Any: Provider instance.
+        """
+        return await self._factory.get(provider_id, **kwargs)
+
+    async def inject(
+        self,
+        target: Any,
+        provider_id: str,
+        attr_name: str = "provider",
+        **kwargs: Any,
+    ) -> None:
+        """
+        Inject a provider instance into a target object.
+
+        Args:
+            target: Object to inject the provider into.
+            provider_id: Unique identifier for the provider.
+            attr_name: Name of the attribute to set on the target.
+            **kwargs: Additional arguments to pass to the provider constructor.
+        """
+        provider = await self.get_provider(provider_id, **kwargs)
+        setattr(target, attr_name, provider)
+
+
+# =============================================================================
+# Decorator for Lazy Provider Loading
+# =============================================================================
+
+def lazy_provider(
+    provider_id: str,
+    **kwargs: Any,
+):
+    """
+    Decorator to lazily load a provider instance as a property.
+
+    Usage:
+        class MyService:
+            @lazy_provider("openai")
+            def openai(self) -> Any:
+                ...
+
+    The decorated property will return the same provider instance on each access.
+
+    Args:
+        provider_id: Unique identifier for the provider.
+        **kwargs: Additional arguments to pass to the provider constructor.
+
+    Returns:
+        Callable: Decorator function.
+    """
+
+    def decorator(func: Callable) -> Callable:
+        @property
+        @lru_cache(maxsize=1)
+        def wrapper(self) -> Any:
+            factory = ProviderFactory()
+            return asyncio.run(factory.create(provider_id, **kwargs))
+
+        return wrapper
+
+    return decorator
+
+
+# =============================================================================
+# Singleton Factory Instance
+# =============================================================================
+
+_factory: Optional[ProviderFactory] = None
+
+
+def get_factory() -> ProviderFactory:
+    """
+    Get the global provider factory instance.
+
+    Returns:
+        ProviderFactory: Global factory instance.
+    """
+    global _factory
+    if _factory is None:
+        _factory = ProviderFactory()
+    return _factory
+
+
+def reset_factory() -> None:
+    """
+    Reset the global provider factory (useful for testing).
+    """
+    global _factory
+    if _factory is not None:
+        asyncio.run(_factory.destroy_all())
+    _factory = None
