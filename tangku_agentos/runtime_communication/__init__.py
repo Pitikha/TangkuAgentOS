@@ -15,6 +15,7 @@ This framework provides:
 - Runtime Services for discovery, registry, health, metadata, context, and session management
 - Complete message models with validation and serialization support
 - Comprehensive exception hierarchy
+- Runtime Integration Layer for connecting all TangkuAgentOS runtimes
 
 Phase 1 Implementation (Core Message Infrastructure):
 - All message models (Message, Event, Command, Query, Response, Broadcast, Notification, StreamMessage, AsyncTask, ScheduledTask)
@@ -24,6 +25,23 @@ Phase 1 Implementation (Core Message Infrastructure):
 - Complete exception hierarchy
 - Full type hints and documentation
 
+Phase 2 Implementation (Runtime Integration):
+- Base runtime classes (BaseRuntime, RuntimeCommunicator, RuntimeLifecycleManager)
+- Standard system events (SystemEvents with 100+ event types)
+- Standard system commands (SystemCommands with 100+ command types)
+- Standard system queries (SystemQueries with 100+ query types)
+- Backward compatibility adapters (LegacyRuntimeAdapter, RuntimeCompatibilityLayer)
+- Runtime integration registry (RuntimeIntegrationRegistry)
+
+Architecture:
+    The Runtime Communication Framework is now the CENTRAL NERVOUS SYSTEM of TangkuAgentOS.
+    
+    ALL runtimes MUST communicate through this framework:
+    - No runtime should directly call another runtime
+    - All communication must go through the appropriate bus
+    - Standard events, commands, and queries should be used for system-level communication
+    - Backward compatibility is maintained for existing runtimes
+
 Example usage:
     from tangku_agentos.runtime_communication import (
         MessageBus,
@@ -32,6 +50,10 @@ Example usage:
         QueryBus,
         RuntimeRegistry,
         RuntimeDiscoveryService,
+        BaseRuntime,
+        SystemEvents,
+        SystemCommands,
+        SystemQueries,
     )
 """
 
@@ -170,6 +192,65 @@ from tangku_agentos.runtime_communication.interfaces import (
 )
 
 # =============================================================================
+# INTEGRATION LAYER
+# =============================================================================
+
+# Base classes
+from tangku_agentos.runtime_communication.integration.base import (
+    BaseRuntime,
+    RuntimeCommunicator,
+    RuntimeLifecycleManager,
+    RuntimeConfig,
+    RuntimeCapabilities,
+    RuntimeState,
+    RuntimeError,
+    RuntimeInitializationError,
+    RuntimeStartupError,
+    RuntimeShutdownError,
+    RuntimePauseError,
+    RuntimeResumeError,
+    RuntimeRestartError,
+    RuntimeRegistrationError,
+)
+
+# Standard system events
+from tangku_agentos.runtime_communication.integration.events import (
+    SystemEvent,
+    SystemEvents,
+)
+
+# Standard system commands
+from tangku_agentos.runtime_communication.integration.commands import (
+    SystemCommand,
+    SystemCommands,
+)
+
+# Standard system queries
+from tangku_agentos.runtime_communication.integration.queries import (
+    SystemQuery,
+    SystemQueries,
+)
+
+# Backward compatibility adapters
+from tangku_agentos.runtime_communication.integration.adapters import (
+    LegacyMessage,
+    LegacyCommand,
+    LegacyQuery,
+    MessageAdapter,
+    CommandAdapter,
+    QueryAdapter,
+    LegacyRuntimeAdapter,
+    RuntimeCompatibilityLayer,
+)
+
+# Integration registry
+from tangku_agentos.runtime_communication.integration.registry import (
+    RuntimeIntegrationRegistry,
+    RuntimeIntegrationStatus,
+    RuntimeIntegrationInfo,
+)
+
+# =============================================================================
 # PUBLIC API
 # =============================================================================
 
@@ -264,4 +345,43 @@ __all__ = [
     "IRuntimeHealth",
     "IMiddleware",
     "IMessageInterceptor",
+    # Integration Layer
+    # Base classes
+    "BaseRuntime",
+    "RuntimeCommunicator",
+    "RuntimeLifecycleManager",
+    "RuntimeConfig",
+    "RuntimeCapabilities",
+    "RuntimeState",
+    # Integration exceptions
+    "RuntimeError",
+    "RuntimeInitializationError",
+    "RuntimeStartupError",
+    "RuntimeShutdownError",
+    "RuntimePauseError",
+    "RuntimeResumeError",
+    "RuntimeRestartError",
+    "RuntimeRegistrationError",
+    # System events
+    "SystemEvent",
+    "SystemEvents",
+    # System commands
+    "SystemCommand",
+    "SystemCommands",
+    # System queries
+    "SystemQuery",
+    "SystemQueries",
+    # Adapters
+    "LegacyMessage",
+    "LegacyCommand",
+    "LegacyQuery",
+    "MessageAdapter",
+    "CommandAdapter",
+    "QueryAdapter",
+    "LegacyRuntimeAdapter",
+    "RuntimeCompatibilityLayer",
+    # Registry
+    "RuntimeIntegrationRegistry",
+    "RuntimeIntegrationStatus",
+    "RuntimeIntegrationInfo",
 ]
