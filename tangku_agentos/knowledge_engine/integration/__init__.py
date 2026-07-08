@@ -1,15 +1,16 @@
 """
 Knowledge Engine - Runtime Communication Framework Integration
 
-This package provides the integration of the Knowledge Engine with the
+This package provides the full integration of the Knowledge Engine with the
 Runtime Communication Framework.
 
 The Knowledge Engine provides:
-- Knowledge indexing and search
-- Document management
-- Semantic search
-- Knowledge graph
+- Knowledge document indexing and search
+- Semantic search capabilities
+- Knowledge graph management
 - Integration with memory engine
+- Event publishing for knowledge changes
+- Health monitoring
 
 Example usage:
     from tangku_agentos.knowledge_engine.integration import KnowledgeEngineRuntime
