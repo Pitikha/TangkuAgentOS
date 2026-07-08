@@ -10,6 +10,7 @@ It includes:
 - Standard system events, commands, and queries
 - Integration utilities and helpers
 - Backward compatibility adapters
+- Runtime integration templates
 
 All runtimes must use this integration layer to communicate with each other.
 
@@ -24,6 +25,10 @@ Example usage:
         LegacyRuntimeAdapter,
         RuntimeCompatibilityLayer,
         RuntimeIntegrationRegistry,
+        RuntimeIntegrationMixin,
+        IntegratedRuntime,
+        create_runtime_config,
+        create_runtime_capabilities,
     )
 
 Architecture:
@@ -90,6 +95,14 @@ from tangku_agentos.runtime_communication.integration.registry import (
     RuntimeIntegrationInfo,
 )
 
+# Runtime templates
+from tangku_agentos.runtime_communication.integration.runtime_template import (
+    RuntimeIntegrationMixin,
+    IntegratedRuntime,
+    create_runtime_config,
+    create_runtime_capabilities,
+)
+
 __all__ = [
     # Base classes
     "BaseRuntime",
@@ -129,4 +142,9 @@ __all__ = [
     "RuntimeIntegrationRegistry",
     "RuntimeIntegrationStatus",
     "RuntimeIntegrationInfo",
+    # Runtime templates
+    "RuntimeIntegrationMixin",
+    "IntegratedRuntime",
+    "create_runtime_config",
+    "create_runtime_capabilities",
 ]
