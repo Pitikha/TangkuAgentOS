@@ -9,6 +9,7 @@ This module provides commands for managing TangkuAgentOS, including:
 """
 
 import click
+import json
 import logging
 from typing import Optional, Dict, Any
 
@@ -50,16 +51,16 @@ def start(config: Optional[str]) -> None:
     try:
         if config:
             # Load custom configuration
-            from tangku_agentos.core_runtime.configuration import ConfigManager
-            config_manager = ConfigManager()
-            config_manager.load_config(config)
-            kernel._config.update(config_manager.get_config())
-            click.echo(f"Loaded configuration from {config}")
+            from tangku_agentos.configuration.config_loader import ConfigLoader
+            config_loader = ConfigLoader(config)
+            config_data = config_loader.load()
+            kernel._config.update(config_data)
+            click.echo(f"✅ Loaded configuration from {config}")
         
-        click.echo("Initializing TangkuAgentOS...")
+        click.echo("🚀 Initializing TangkuAgentOS...")
         kernel.initialize()
         
-        click.echo("Starting TangkuAgentOS...")
+        click.echo("🚀 Starting TangkuAgentOS...")
         kernel.startup()
         
         click.echo("✅ TangkuAgentOS started successfully!")
@@ -76,7 +77,7 @@ def stop() -> None:
     kernel = get_kernel()
     
     try:
-        click.echo("Stopping TangkuAgentOS...")
+        click.echo("🛑 Stopping TangkuAgentOS...")
         kernel.shutdown()
         click.echo("✅ TangkuAgentOS stopped successfully!")
     except Exception as e:
@@ -95,20 +96,20 @@ def status(json: bool) -> None:
         status_data = kernel.status()
         
         if json:
-            import json
             click.echo(json.dumps(status_data, indent=2))
         else:
-            click.echo("=== TangkuAgentOS Status ===")
-            click.echo(f"Kernel State: {status_data.get('state', 'unknown')}")
+            click.echo("=== 📊 TangkuAgentOS Status ===")
+            click.echo(f"Kernel ID: {status_data.get('kernel_id', 'N/A')}")
+            click.echo(f"State: {status_data.get('state', 'unknown')}")
             click.echo(f"Number of Runtimes: {status_data.get('runtime_count', 0)}")
-            click.echo("\n--- Runtime Details ---")
+            click.echo("\n--- 📋 Runtime Details ---")
             for runtime_id, runtime_info in status_data.get('runtimes', {}).items():
-                click.echo(f"  {runtime_id}:")
-                click.echo(f"    Status: {runtime_info.get('status', 'unknown')}")
-                click.echo(f"    State: {runtime_info.get('state', 'unknown')}")
+                click.echo(f"  🔹 {runtime_id}:")
+                click.echo(f"     Status: {runtime_info.get('status', 'unknown')}")
+                click.echo(f"     State: {runtime_info.get('state', 'unknown')}")
                 deps = runtime_info.get('dependencies', [])
                 if deps:
-                    click.echo(f"    Dependencies: {', '.join(deps)}")
+                    click.echo(f"     Dependencies: {', '.join(deps)}")
     except Exception as e:
         click.echo(f"❌ Failed to get status: {e}", err=True)
         logger.error(f"Status error: {e}", exc_info=True)
@@ -122,15 +123,15 @@ def restart(runtime_id: str) -> None:
     kernel = get_kernel()
     
     try:
-        click.echo(f"Restarting runtime: {runtime_id}")
-        # Note: This assumes the kernel has a restart_runtime method
-        # If not, we'll need to implement it
+        click.echo(f"🔄 Restarting runtime: {runtime_id}")
         if hasattr(kernel, 'restart_runtime'):
             kernel.restart_runtime(runtime_id)
         else:
             # Fallback: stop and start the runtime
-            kernel.stop_runtime(runtime_id)
-            kernel.start_runtime(runtime_id)
+            if hasattr(kernel, 'stop_runtime'):
+                kernel.stop_runtime(runtime_id)
+            if hasattr(kernel, 'start_runtime'):
+                kernel.start_runtime(runtime_id)
         click.echo(f"✅ Runtime '{runtime_id}' restarted successfully!")
     except Exception as e:
         click.echo(f"❌ Failed to restart runtime '{runtime_id}': {e}", err=True)
@@ -145,7 +146,7 @@ def health() -> None:
     
     try:
         health_data = kernel.health()
-        click.echo("=== TangkuAgentOS Health ===")
+        click.echo("=== 🏥 TangkuAgentOS Health ===")
         click.echo(f"Status: {health_data.get('status', 'unknown')}")
         click.echo(f"Summary: {health_data.get('summary', 'No summary')}")
         
@@ -169,12 +170,10 @@ def config(output: Optional[str]) -> None:
         config_data = kernel.dump_state()
         
         if output:
-            import json
             with open(output, 'w') as f:
                 json.dump(config_data, f, indent=2)
             click.echo(f"✅ Configuration saved to {output}")
         else:
-            import json
             click.echo(json.dumps(config_data, indent=2))
     except Exception as e:
         click.echo(f"❌ Failed to get configuration: {e}", err=True)
@@ -185,16 +184,15 @@ def config(output: Optional[str]) -> None:
 @cli.command()
 def logs() -> None:
     """Show TangkuAgentOS logs."""
-    click.echo("=== TangkuAgentOS Logs ===")
+    click.echo("=== 📜 TangkuAgentOS Logs ===")
     click.echo("Use 'tangku-agentos start --verbose' for detailed logs.")
-    # In a real implementation, we would stream logs from the logger
 
 
 @cli.command()
 def version() -> None:
     """Show TangkuAgentOS version."""
     from tangku_agentos import __version__
-    click.echo(f"TangkuAgentOS version: {__version__}")
+    click.echo(f"📦 TangkuAgentOS version: {__version__}")
 
 
 if __name__ == "__main__":
