@@ -168,12 +168,130 @@ class KernelManager:
         self._event_bus = event_bus or EventBus()
         self._security_manager = security_manager
         self._observability_manager = observability_manager
-        self._memory_manager = None  # Will be initialized in _setup_builtin_runtime_definitions
+        self._memory_manager = None
+        self._workflow_manager = None
+        self._agent_intelligence_manager = None
 
         # Initialize runtime definitions and internal services
         self._runtime_definitions: Dict[str, Dict[str, Any]] = {}
         self._setup_builtin_runtime_definitions()
         self._register_internal_services()
+
+    def _setup_builtin_runtime_definitions(self) -> None:
+        """Sets up built-in runtime definitions for the kernel."""
+        # Initialize memory manager
+        try:
+            from tangku_agentos.memory_engine.manager import MemoryManager
+            self._memory_manager = MemoryManager()
+            _logger.debug("Initialized MemoryManager")
+        except ImportError as e:
+            _logger.warning(f"Failed to import MemoryManager: {e}")
+
+        # Initialize workflow manager
+        try:
+            from tangku_agentos.workflow_engine.manager import WorkflowManager
+            self._workflow_manager = WorkflowManager()
+            _logger.debug("Initialized WorkflowManager")
+        except ImportError as e:
+            _logger.warning(f"Failed to import WorkflowManager: {e}")
+
+        # Initialize agent intelligence manager
+        try:
+            from tangku_agentos.agent_intelligence.manager import AgentIntelligenceManager
+            self._agent_intelligence_manager = AgentIntelligenceManager()
+            _logger.debug("Initialized AgentIntelligenceManager")
+        except ImportError as e:
+            _logger.warning(f"Failed to import AgentIntelligenceManager: {e}")
+
+        # Define built-in runtimes
+        self._runtime_definitions = {
+            "memory_runtime": {
+                "name": "Memory Runtime",
+                "class": "tangku_agentos.memory_engine.manager:MemoryManager",
+                "dependencies": [],
+                "enabled": True,
+            },
+            "workflow_runtime": {
+                "name": "Workflow Runtime",
+                "class": "tangku_agentos.workflow_engine.manager:WorkflowManager",
+                "dependencies": ["memory_runtime"],
+                "enabled": True,
+            },
+            "agent_intelligence_runtime": {
+                "name": "Agent Intelligence Runtime",
+                "class": "tangku_agentos.agent_intelligence.manager:AgentIntelligenceManager",
+                "dependencies": ["memory_runtime"],
+                "enabled": True,
+            },
+        }
+
+    def _register_internal_services(self) -> None:
+        """Registers internal services with the kernel."""
+        # Register memory manager as a service
+        if self._memory_manager is not None:
+            self.register_singleton("memory_manager", self._memory_manager)
+
+        # Register workflow manager as a service
+        if self._workflow_manager is not None:
+            self.register_singleton("workflow_manager", self._workflow_manager)
+
+        # Register agent intelligence manager as a service
+        if self._agent_intelligence_manager is not None:
+            self.register_singleton(
+                "agent_intelligence_manager", self._agent_intelligence_manager
+            )
+
+    def _load_configuration(self) -> None:
+        """Loads the kernel configuration from config.yaml."""
+        config_path = Path("config.yaml")
+        if config_path.exists():
+            try:
+                with open(config_path, "r") as f:
+                    config_data = json.load(f)
+                    self._config.update(config_data)
+                    self._config_sources["config.yaml"] = str(config_path)
+                    _logger.info("Loaded configuration from config.yaml")
+            except Exception as e:
+                _logger.error(f"Failed to load config.yaml: {e}")
+        else:
+            _logger.warning("config.yaml not found, using defaults")
+
+    def _validate_startup(self) -> None:
+        """Validates that the kernel is ready to start."""
+        if not self._runtimes:
+            _logger.warning("No runtimes registered, kernel may not function properly")
+
+    def _record_observability(self, event_name: str, data: Dict[str, Any]) -> None:
+        """Records an observability event."""
+        if self._observability_manager is not None:
+            self._observability_manager.record(event_name, data)
+
+    def _persist_state(self, action: str) -> None:
+        """Persists the kernel state."""
+        self.state_manager.persist_state(self.dump_state())
+
+    def _resolve_runtime_instance(self, runtime_id: str) -> Any:
+        """Resolves a runtime instance by its ID."""
+        if runtime_id in self._runtime_instances:
+            return self._runtime_instances[runtime_id]
+
+        runtime_def = self._runtime_definitions.get(runtime_id)
+        if runtime_def is None:
+            return None
+
+        class_path = runtime_def.get("class", "")
+        if ":" in class_path:
+            module_path, class_name = class_path.rsplit(":", 1)
+            try:
+                module = __import__(module_path, fromlist=[class_name])
+                runtime_class = getattr(module, class_name)
+                instance = runtime_class()
+                self._runtime_instances[runtime_id] = instance
+                return instance
+            except Exception as e:
+                _logger.error(f"Failed to resolve runtime {runtime_id}: {e}")
+                return None
+        return None
 
     # -------------------------------------------------------------------------- #
     # Public API: Runtime Management
@@ -366,6 +484,17 @@ class KernelManager:
             _logger.error(f"Kernel initialization failed: {e}")
             from .exceptions import RuntimeError
             raise RuntimeError(f"Kernel initialization failed: {e}") from e
+
+    def _register_default_runtimes(self) -> None:
+        """Registers default runtimes with the kernel."""
+        for runtime_id, runtime_def in self._runtime_definitions.items():
+            if runtime_def.get("enabled", True):
+                self.register_runtime(
+                    runtime_id=runtime_id,
+                    runtime=None,
+                    dependencies=runtime_def.get("dependencies", []),
+                    metadata={"name": runtime_def.get("name", runtime_id)},
+                )
 
     def startup(self) -> Dict[str, Any]:
         """Starts the kernel and all registered runtimes.
@@ -887,422 +1016,36 @@ class KernelManager:
             _logger.debug(f"Stopped runtime: {runtime_id}")
             return
 
-        runtime = self._runtime_instances.get(runtime_id)
-        if runtime is None:
-            self._runtime_states[runtime_id] = "stopped"
-            return
-
+        self._runtime_states[runtime_id] = "stopping"
         try:
-            if hasattr(runtime, "shutdown"):
+            runtime = self._resolve_runtime_instance(runtime_id)
+            if runtime is not None and hasattr(runtime, "shutdown"):
                 runtime.shutdown()
-            elif hasattr(runtime, "stop"):
+            elif runtime is not None and hasattr(runtime, "stop"):
                 runtime.stop()
-        except Exception as e:
-            _logger.error(f"Error stopping runtime {runtime_id}: {e}")
 
-        self._runtime_states[runtime_id] = "stopped"
-        self._runtimes[runtime_id] = KernelRuntime(
-            runtime_id=runtime_id,
-            name=runtime_id,
-            status="stopped",
-            metadata=self._runtime_metadata.get(runtime_id, {}),
-        )
-        self.supervisor.register_runtime(self._runtimes[runtime_id])
-        self.registry.register(self._runtimes[runtime_id])
-        _logger.debug(f"Stopped runtime: {runtime_id}")
-
-    def _resolve_runtime_instance(self, runtime_id: str) -> Any:
-        """Resolves a runtime instance from its definition.
-
-        Args:
-            runtime_id: The ID of the runtime to resolve.
-
-        Returns:
-            The resolved runtime instance, or `None` if the runtime cannot be resolved.
-
-        Raises:
-            RuntimeResolutionError: If the runtime cannot be resolved.
-        """
-        instance = self._runtime_instances.get(runtime_id)
-        if instance is not None:
-            return instance
-
-        definition = self._runtime_definitions.get(runtime_id)
-        if definition is None:
-            return None
-
-        factory = definition.get("factory")
-        if factory is None:
-            return None
-
-        try:
-            value = factory()
-            if runtime_id == "multi_agent":
-                if value is None:
-                    from tangku_agentos.coordination.runtime import MultiAgentManager
-
-                    value = MultiAgentManager(
-                        event_bus=self._event_bus,
-                        security_manager=self._security_manager,
-                        observability_manager=self._observability_manager,
-                    )
-            self._runtime_instances[runtime_id] = value
-            self._runtime_states[runtime_id] = self._runtime_states.get(
-                runtime_id, "registered"
+            self._runtime_states[runtime_id] = "stopped"
+            self._runtime_errors.pop(runtime_id, None)
+            self._runtimes[runtime_id] = KernelRuntime(
+                runtime_id=runtime_id,
+                name=runtime_id,
+                status="stopped",
+                metadata=self._runtime_metadata.get(runtime_id, {}),
             )
-            _logger.debug(f"Resolved runtime instance: {runtime_id}")
-            return value
-        except Exception as e:
-            _logger.error(f"Failed to resolve runtime {runtime_id}: {e}")
-            from .exceptions import RuntimeResolutionError
-            raise RuntimeResolutionError(
-                f"Failed to resolve runtime {runtime_id}: {e}"
-            ) from e
-
-    # -------------------------------------------------------------------------- #
-    # Internal Methods: Configuration and Setup
-    # -------------------------------------------------------------------------- #
-
-    def _setup_builtin_runtime_definitions(self) -> None:
-        """Sets up the definitions for built-in runtimes.
-
-        This method initializes the `_runtime_definitions` dictionary with
-        definitions for all built-in runtimes, including their dependencies,
-        factories, and metadata.
-        """
-        # Import managers lazily to avoid circular imports
-        from tangku_agentos.automation_runtime.runtime import AutomationManager
-        from tangku_agentos.context_engine.manager import ContextManager
-        from tangku_agentos.knowledge_engine.manager import KnowledgeManager
-        from tangku_agentos.memory_engine import MemoryManager
-        from tangku_agentos.model_runtime.manager import ModelRuntimeManager
-        from tangku_agentos.observability.manager import ObservabilityManager
-        from tangku_agentos.planning_runtime.manager import PlanningManager
-        from tangku_agentos.provider_runtime.manager import ProviderManager
-        from tangku_agentos.reasoning_runtime.manager import ReasoningManager
-        from tangku_agentos.repository_intelligence.manager import RepositoryManager
-        from tangku_agentos.security_engine.manager import SecurityManager
-        from tangku_agentos.terminal_runtime.manager import TerminalManager
-        from tangku_agentos.workflow_engine.manager import WorkflowManager
-        from tangku_agentos.workspace_engine.manager import WorkspaceManager
-
-        # Initialize memory manager if not already set
-        if self._memory_manager is None:
-            self._memory_manager = MemoryManager()
-
-        # Initialize observability manager if not provided
-        if self._observability_manager is None:
-            self._observability_manager = ObservabilityManager(
-                logging_manager=type(
-                    "LoggingManager", (), {"snapshot": lambda self: []}
-                )(),
-                metrics_manager=type(
-                    "MetricsManager", (), {"snapshot": lambda self: {}}
-                )(),
-                trace_manager=type(
-                    "TraceManager", (), {"snapshot": lambda self: []}
-                )(),
-                health_manager=type(
-                    "HealthManager", (), {"snapshot": lambda self: {}}
-                )(),
-                monitoring_manager=type("MonitoringManager", (), {})(),
-                analytics_manager=type("AnalyticsManager", (), {})(),
-                timeline_manager=type("TimelineManager", (), {})(),
-                diagnostics_manager=type("DiagnosticsManager", (), {})(),
-                event_recorder=type(
-                    "EventRecorder", (), {"record": lambda self, *args, **kwargs: None}
-                )(),
+            self.supervisor.register_runtime(self._runtimes[runtime_id])
+            self.registry.register(self._runtimes[runtime_id])
+            _logger.debug(f"Stopped runtime: {runtime_id}")
+        except Exception as exc:
+            self._runtime_states[runtime_id] = "failed"
+            self._runtime_errors[runtime_id] = str(exc)
+            self._runtimes[runtime_id] = KernelRuntime(
+                runtime_id=runtime_id,
+                name=runtime_id,
+                status="failed",
+                metadata=self._runtime_metadata.get(runtime_id, {}),
             )
-
-        # Initialize security manager if not provided
-        if self._security_manager is None:
-            self._security_manager = SecurityManager()
-
-        # Define built-in runtimes
-        self._runtime_definitions = {
-            "memory": {
-                "dependencies": [],
-                "factory": lambda: self._memory_manager,
-                "metadata": {"kind": "service"},
-            },
-            "planning": {
-                "dependencies": ["memory"],
-                "factory": lambda: PlanningManager(
-                    event_bus=self._event_bus,
-                    security_manager=self._security_manager,
-                    observability_manager=self._observability_manager,
-                ),
-                "metadata": {"kind": "runtime"},
-            },
-            "reasoning": {
-                "dependencies": ["memory", "planning"],
-                "factory": lambda: ReasoningManager(
-                    event_bus=self._event_bus,
-                    security_manager=self._security_manager,
-                    observability_manager=self._observability_manager,
-                ),
-                "metadata": {"kind": "runtime"},
-            },
-            "context": {
-                "dependencies": ["memory"],
-                "factory": lambda: ContextManager(
-                    event_bus=self._event_bus,
-                    security_manager=self._security_manager,
-                    observability_manager=self._observability_manager,
-                ),
-                "metadata": {"kind": "runtime"},
-            },
-            "knowledge": {
-                "dependencies": ["memory"],
-                "factory": lambda: KnowledgeManager(
-                    event_bus=self._event_bus,
-                    security_manager=self._security_manager,
-                    observability_manager=self._observability_manager,
-                ),
-                "metadata": {"kind": "runtime"},
-            },
-            "provider": {
-                "dependencies": ["memory"],
-                "factory": lambda: ProviderManager(),
-                "metadata": {"kind": "runtime"},
-            },
-            "model": {
-                "dependencies": ["provider"],
-                "factory": lambda: ModelRuntimeManager(),
-                "metadata": {"kind": "runtime"},
-            },
-            "workflow": {
-                "dependencies": ["memory"],
-                "factory": lambda: WorkflowManager(),
-                "metadata": {"kind": "runtime"},
-            },
-            "automation": {
-                "dependencies": ["memory", "workflow"],
-                "factory": lambda: AutomationManager(
-                    event_bus=self._event_bus,
-                    security_manager=self._security_manager,
-                    observability_manager=self._observability_manager,
-                ),
-                "metadata": {"kind": "runtime"},
-            },
-            "workspace": {
-                "dependencies": ["memory"],
-                "factory": lambda: WorkspaceManager(
-                    security_manager=self._security_manager,
-                    observability_manager=self._observability_manager,
-                    event_bus=self._event_bus,
-                ),
-                "metadata": {"kind": "runtime"},
-            },
-            "terminal": {
-                "dependencies": ["workspace"],
-                "factory": lambda: TerminalManager(),
-                "metadata": {"kind": "runtime"},
-            },
-            "repository": {
-                "dependencies": ["workspace"],
-                "factory": lambda: RepositoryManager(),
-                "metadata": {"kind": "runtime"},
-            },
-            "multi_agent": {
-                "dependencies": [
-                    "planning",
-                    "reasoning",
-                    "workflow",
-                    "automation",
-                    "context",
-                    "knowledge",
-                    "provider",
-                    "terminal",
-                    "workspace",
-                ],
-                "factory": lambda: None,
-                "metadata": {"kind": "runtime"},
-            },
-            "observability": {
-                "dependencies": ["event_bus"],
-                "factory": lambda: self._observability_manager,
-                "metadata": {"kind": "service"},
-            },
-            "security": {
-                "dependencies": [],
-                "factory": lambda: self._security_manager,
-                "metadata": {"kind": "service"},
-            },
-            "configuration": {
-                "dependencies": [],
-                "factory": lambda: self._config,
-                "metadata": {"kind": "service"},
-            },
-        }
-
-    def _register_default_runtimes(self) -> None:
-        """Registers the default runtimes defined in `_runtime_definitions`.
-
-        This method iterates over all runtime definitions and registers them
-        with the kernel if they have not already been registered.
-        """
-        for runtime_id in self._runtime_definitions:
-            if runtime_id not in self._runtimes:
-                self.register_runtime(
-                    KernelRuntime(
-                        runtime_id=runtime_id,
-                        name=runtime_id,
-                        status="registered",
-                        metadata=self._runtime_definitions[runtime_id]["metadata"],
-                    ),
-                    dependencies=self._runtime_definitions[runtime_id][
-                        "dependencies"
-                    ],
-                    metadata=self._runtime_definitions[runtime_id]["metadata"],
-                )
-            self._runtime_dependencies[runtime_id] = (
-                self._runtime_definitions[runtime_id]["dependencies"]
-            )
-            self._runtime_states[runtime_id] = self._runtime_states.get(
-                runtime_id, "registered"
-            )
-            self._runtime_metadata[runtime_id] = {
-                **self._runtime_metadata.get(runtime_id, {}),
-                **self._runtime_definitions[runtime_id]["metadata"],
-                "dependencies": self._runtime_definitions[runtime_id]["dependencies"],
-            }
-
-    def _validate_startup(self) -> None:
-        """Validates the startup configuration of the kernel.
-
-        This method checks that all runtime dependencies are defined and
-        updates the kernel state if validation fails.
-        """
-        errors: List[str] = []
-        for runtime_id in self._runtime_definitions:
-            dependencies = self._runtime_definitions[runtime_id]["dependencies"]
-            for dependency in dependencies:
-                if dependency not in self._runtime_definitions:
-                    errors.append(
-                        f"Missing dependency {dependency} for {runtime_id}"
-                    )
-
-        if errors:
-            self._runtime_states["kernel"] = "degraded"
-            self._runtime_errors["kernel"] = "; ".join(errors)
-            _logger.error(f"Startup validation failed: {errors}")
-
-    def _load_configuration(self) -> None:
-        """Loads the kernel configuration from environment variables and files.
-
-        This method loads configuration from:
-        1. Environment variables prefixed with `TANGKU_AGENTOS_`.
-        2. Configuration files (`config.json`, `tangku_agentos.json`).
-        3. Workspace configuration (`workspace.json`).
-        """
-        values: Dict[str, Any] = {}
-
-        # Load from environment variables
-        for key, value in os.environ.items():
-            if key.startswith("TANGKU_AGENTOS_"):
-                normalized_key = key.lower().replace("tangku_agentos_", "")
-                values[normalized_key] = value
-        self._config_sources["environment"] = "environment"
-        self._config.update(values)
-
-        # Load from configuration files
-        config_paths = [
-            Path("config.json"),
-            Path("tangku_agentos.json"),
-            Path("/workspaces/TangkuAgentOS/config.json"),
-        ]
-        for config_path in config_paths:
-            if config_path.exists():
-                try:
-                    with config_path.open("r", encoding="utf-8") as handle:
-                        loaded = json.load(handle)
-                    self._config.update(loaded)
-                    self._config_sources[str(config_path)] = str(config_path)
-                    _logger.debug(f"Loaded configuration from {config_path}")
-                except Exception as e:
-                    _logger.warning(f"Failed to load config from {config_path}: {e}")
-
-        if self._config:
-            self._config_sources["runtime_overrides"] = "runtime_overrides"
-
-        # Load from workspace configuration
-        workspace_path = os.getenv("TANGKU_AGENTOS_WORKSPACE") or \
-            "/workspaces/TangkuAgentOS"
-        workspace_config = Path(workspace_path) / "workspace.json"
-        if workspace_config.exists():
-            try:
-                with workspace_config.open("r", encoding="utf-8") as handle:
-                    workspace_values = json.load(handle)
-                self._config.update(workspace_values)
-                self._config_sources[str(workspace_config)] = str(workspace_config)
-                _logger.debug(f"Loaded workspace config from {workspace_config}")
-            except Exception as e:
-                _logger.warning(f"Failed to load workspace config: {e}")
-
-    def _config_value(self, key: str, default: Any = None) -> Any:
-        """Retrieves a configuration value by its key.
-
-        Args:
-            key: The configuration key.
-            default: The default value to return if the key is not found.
-
-        Returns:
-            The configuration value, or the default value if the key is not found.
-        """
-        return self._config.get(key, default)
-
-    # -------------------------------------------------------------------------- #
-    # Internal Methods: State and Observability
-    # -------------------------------------------------------------------------- #
-
-    def _persist_state(self, phase: str) -> None:
-        """Persists the kernel state for a given phase.
-
-        Args:
-            phase: The phase of the kernel lifecycle (e.g., "startup", "shutdown").
-        """
-        self.state_manager.set_state(
-            "kernel",
-            {"phase": phase, "kernel_id": self._kernel_id, "config": dict(self._config)},
-        )
-        self.snapshots.create_snapshot(
-            f"snapshot-{phase}", {"phase": phase, "kernel_id": self._kernel_id}
-        )
-        _logger.debug(f"Persisted kernel state for phase: {phase}")
-
-    def _record_observability(self, event_name: str, payload: Dict[str, Any]) -> None:
-        """Records an observability event.
-
-        Args:
-            event_name: The name of the event to record.
-            payload: The payload to include with the event.
-        """
-        try:
-            self._event_bus.publish(event_name, payload)
-        except Exception as e:
-            _logger.warning(f"Failed to publish event {event_name}: {e}")
-
-        try:
-            if (
-                self._observability_manager is not None
-                and hasattr(self._observability_manager, "event_recorder")
-            ):
-                self._observability_manager.event_recorder.record(
-                    {"event": event_name, "payload": payload}
-                )
-        except Exception as e:
-            _logger.warning(f"Failed to record observability event: {e}")
-
-    def _register_internal_services(self) -> None:
-        """Registers internal services with the kernel.
-
-        This method registers the event bus, memory manager, security manager,
-        observability manager, and configuration as singleton services.
-        """
-        self.register_singleton("event_bus", self._event_bus)
-        self.register_singleton("memory", self._memory_manager)
-        self.register_singleton("security", self._security_manager)
-        self.register_singleton("observability", self._observability_manager)
-        self.register_singleton("configuration", self._config)
-        _logger.debug("Registered internal services")
+            self.supervisor.register_runtime(self._runtimes[runtime_id])
+            self.registry.register(self._runtimes[runtime_id])
+            _logger.error(f"Failed to stop runtime {runtime_id}: {exc}")
+            from .exceptions import RuntimeError
+            raise RuntimeError(f"Failed to stop runtime {runtime_id}: {exc}") from exc
