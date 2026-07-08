@@ -1,194 +1,33 @@
-"""Core Kernel foundation for Tangku AgentOS."""
+"""Core Runtime module for TangkuAgentOS.
 
-from .base import CoreComponent, Configurable, Monitorable, HealthCheckable
-from .configuration import ConfigurationManager, ConfigurationSchema
-from .constants import (
-    LogLevel,
-    LogFormat,
-    LifecycleEvent,
-    RegistryScope,
-    StateChangeType,
-    EventPriority,
-    StorageBackendType,
-    DEFAULT_LOG_FORMAT,
-    JSON_LOG_FORMAT,
-    DEFAULT_CONFIG_NAMESPACE,
-    CORE_KERNEL_NAMESPACE,
-)
-from .event_bus import (
-    EventBus,
-    EventListener,
-    EventMetrics,
-    DeadLetterQueueEntry,
-    AsyncEventHandler,
-)
-from .exceptions import (
-    CoreError,
-    ConfigurationError,
-    SchemaValidationError,
-    MissingRequiredKeyError,
-    EventBusError,
-    EventHandlerError,
-    MiddlewareError,
-    EventReplayError,
-    DeadLetterQueueError,
-    LoggerError,
-    LogHandlerError,
-    LogRotationError,
-    RegistryError,
-    DuplicateRegistryKeyError,
-    RegistryKeyNotFoundError,
-    TTLExpiredError,
-    LazyLoadingError,
-    StateError,
-    StateKeyNotFoundError,
-    TransactionError,
-    RollbackError,
-    StorageError,
-    SerializationError,
-    LifecycleError,
-    LifecycleTimeoutError,
-    LifecycleRollbackError,
-    HealthCheckError,
-)
-from .lifecycle_manager import LifecycleManager, LifecycleMetrics
-from .logger import Logger, StructuredFormatter, AsyncHandler, LogContext
-from .registry import Registry, DependencyGraph
-from .state_manager import StateManager, InMemoryStorageBackend
-from .types import (
-    ConfigData,
-    ConfigKey,
-    ConfigValue,
-    EventHandler,
-    EventPayload,
-    EventRecord,
-    Middleware,
-    AsyncMiddleware,
-    Metadata,
-    RegistryEntry,
-    RegistryKey,
-    RegistryValue,
-    StateData,
-    StateSnapshot,
-    StateChangeType,
-    StorageBackend,
-    CorrelationID,
-    RequestID,
-    LogContext,
-)
-from .utils import (
-    SingletonMeta,
-    validate_identifier,
-    merge_configurations,
-    deep_merge_configurations,
-    validate_schema,
-    generate_correlation_id,
-    generate_request_id,
-    coerce_config_value,
-    filter_config_by_prefix,
-    flatten_config,
-    expand_config,
-)
+This module provides the foundational runtime components, including
+configuration, event bus, lifecycle management, logging, and state management.
+"""
+
+from .base import BaseRuntime
+from .configuration import RuntimeConfiguration
+from .constants import RuntimeConstants
+from .event_bus import EventBus
+from .exceptions import RuntimeError, RuntimeLifecycleError
+from .lifecycle_manager import RuntimeLifecycleManager
+from .logger import RuntimeLogger
+from .registry import RuntimeRegistry
+from .state_manager import RuntimeStateManager
+from .types import RuntimeStatus, RuntimeType
+from .utils import RuntimeUtils
 
 __all__ = [
-    # Base Classes
-    "CoreComponent",
-    "Configurable",
-    "Monitorable",
-    "HealthCheckable",
-    # Configuration
-    "ConfigurationManager",
-    "ConfigurationSchema",
-    # Constants
-    "LogLevel",
-    "LogFormat",
-    "LifecycleEvent",
-    "RegistryScope",
-    "StateChangeType",
-    "EventPriority",
-    "StorageBackendType",
-    "DEFAULT_LOG_FORMAT",
-    "JSON_LOG_FORMAT",
-    "DEFAULT_CONFIG_NAMESPACE",
-    "CORE_KERNEL_NAMESPACE",
-    # Event Bus
+    "BaseRuntime",
+    "RuntimeConfiguration",
+    "RuntimeConstants",
     "EventBus",
-    "EventListener",
-    "EventMetrics",
-    "DeadLetterQueueEntry",
-    "AsyncEventHandler",
-    # Exceptions
-    "CoreError",
-    "ConfigurationError",
-    "SchemaValidationError",
-    "MissingRequiredKeyError",
-    "EventBusError",
-    "EventHandlerError",
-    "MiddlewareError",
-    "EventReplayError",
-    "DeadLetterQueueError",
-    "LoggerError",
-    "LogHandlerError",
-    "LogRotationError",
-    "RegistryError",
-    "DuplicateRegistryKeyError",
-    "RegistryKeyNotFoundError",
-    "TTLExpiredError",
-    "LazyLoadingError",
-    "StateError",
-    "StateKeyNotFoundError",
-    "TransactionError",
-    "RollbackError",
-    "StorageError",
-    "SerializationError",
-    "LifecycleError",
-    "LifecycleTimeoutError",
-    "LifecycleRollbackError",
-    "HealthCheckError",
-    # Lifecycle
-    "LifecycleManager",
-    "LifecycleMetrics",
-    # Logger
-    "Logger",
-    "StructuredFormatter",
-    "AsyncHandler",
-    "LogContext",
-    # Registry
-    "Registry",
-    "DependencyGraph",
-    # State Manager
-    "StateManager",
-    "InMemoryStorageBackend",
-    # Types
-    "ConfigData",
-    "ConfigKey",
-    "ConfigValue",
-    "EventHandler",
-    "EventPayload",
-    "EventRecord",
-    "Middleware",
-    "AsyncMiddleware",
-    "Metadata",
-    "RegistryEntry",
-    "RegistryKey",
-    "RegistryValue",
-    "StateData",
-    "StateSnapshot",
-    "StateChangeType",
-    "StorageBackend",
-    "CorrelationID",
-    "RequestID",
-    "LogContext",
-    # Utils
-    "SingletonMeta",
-    "validate_identifier",
-    "merge_configurations",
-    "deep_merge_configurations",
-    "validate_schema",
-    "generate_correlation_id",
-    "generate_request_id",
-    "coerce_config_value",
-    "filter_config_by_prefix",
-    "flatten_config",
-    "expand_config",
+    "RuntimeError",
+    "RuntimeLifecycleError",
+    "RuntimeLifecycleManager",
+    "RuntimeLogger",
+    "RuntimeRegistry",
+    "RuntimeStateManager",
+    "RuntimeStatus",
+    "RuntimeType",
+    "RuntimeUtils",
 ]
