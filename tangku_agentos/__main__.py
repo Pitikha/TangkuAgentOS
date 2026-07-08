@@ -9,10 +9,9 @@ It initializes the AI Kernel, starts all runtimes, and provides a unified interf
 for managing the system.
 """
 
-import asyncio
-import logging
 import signal
 import sys
+import logging
 from typing import Optional
 
 # Configure logging
@@ -40,8 +39,8 @@ def setup_signal_handlers(kernel: "KernelManager") -> None:
     signal.signal(signal.SIGTERM, handle_shutdown)
 
 
-async def run_kernel() -> None:
-    """Run the TangkuAgentOS kernel."""
+def main() -> None:
+    """Main entry point for TangkuAgentOS."""
     from tangku_agentos.kernel_runtime.kernel import KernelManager
     
     # Initialize the kernel
@@ -58,24 +57,17 @@ async def run_kernel() -> None:
         
         # Keep the kernel running
         logger.info("TangkuAgentOS is running. Press Ctrl+C to stop.")
-        while True:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("Shutting down TangkuAgentOS...")
+        # Sleep indefinitely (signal handler will handle shutdown)
+        try:
+            while True:
+                signal.pause()
+        except KeyboardInterrupt:
+            pass
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         raise
     finally:
         kernel.shutdown()
-
-
-def main() -> None:
-    """Main entry point for TangkuAgentOS."""
-    try:
-        asyncio.run(run_kernel())
-    except Exception as e:
-        logger.error(f"Failed to start TangkuAgentOS: {e}")
-        sys.exit(1)
 
 
 if __name__ == "__main__":
