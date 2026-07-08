@@ -41,7 +41,11 @@ def setup_signal_handlers(kernel: "KernelManager") -> None:
 
 def main() -> None:
     """Main entry point for TangkuAgentOS."""
-    from tangku_agentos.kernel_runtime.kernel import KernelManager
+    try:
+        from tangku_agentos.kernel_runtime.kernel import KernelManager
+    except ImportError as e:
+        logger.error(f"Failed to import KernelManager: {e}")
+        sys.exit(1)
     
     # Initialize the kernel
     kernel = KernelManager()
