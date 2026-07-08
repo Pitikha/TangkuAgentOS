@@ -56,6 +56,7 @@ DEFAULT_STATE_STORAGE_PATH = "/tmp/tangku-provider-state.json"
 class ProviderID(Enum):
     """Supported provider IDs."""
 
+    # Cloud Providers
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GOOGLE = "google"
@@ -67,6 +68,13 @@ class ProviderID(Enum):
     FIREWORKS = "fireworks"
     AZURE_OPENAI = "azure_openai"
     OPENROUTER = "openrouter"
+    XAI = "xai"
+    CEREBRAS = "cerebras"
+    HUGGINGFACE = "huggingface"
+    VERTEX_AI = "vertex_ai"
+    AWS_BEDROCK = "aws_bedrock"
+
+    # Local Providers
     OLLAMA = "ollama"
     LMSTUDIO = "lmstudio"
     LLAMACPP = "llamacpp"
@@ -103,6 +111,7 @@ class ProviderStatus(Enum):
 class ProviderCapability(Enum):
     """Capabilities supported by providers."""
 
+    # Core Capabilities
     CHAT = "chat"
     STREAMING = "streaming"
     EMBEDDINGS = "embeddings"
@@ -112,9 +121,14 @@ class ProviderCapability(Enum):
     TOOL_CALLING = "tool_calling"
     FUNCTION_CALLING = "function_calling"
     REASONING = "reasoning"
+
+    # Advanced Capabilities
     JSON_MODE = "json_mode"
     STRUCTURED_OUTPUT = "structured_output"
     OFFLINE = "offline"
+    CODE_EXECUTION = "code_execution"
+    MULTIMODAL = "multimodal"
+    FINE_TUNING = "fine_tuning"
 
 
 # --- Routing Policies ---
@@ -129,6 +143,9 @@ class RoutingPolicy(Enum):
     ROUND_ROBIN = "round_robin"
     WEIGHTED = "weighted"
     PRIORITY = "priority"
+    CONSENSUS = "consensus"
+    ENSEMBLE = "ensemble"
+    HYBRID = "hybrid"
 
 
 # --- Load Balancing Strategies ---
@@ -194,3 +211,6 @@ class TaskType(Enum):
 TANGKU_PROVIDER_KEY_PREFIX = "TANGKU_PROVIDER_"
 TANGKU_PROVIDER_KEY_SUFFIX = "_KEY"
 TANGKU_PROVIDER_DEFAULT_KEY = "TANGKU_PROVIDER_KEY"
+
+# --- Encryption ---
+TANGKU_ENCRYPTION_KEY = "TANGKU_ENCRYPTION_KEY"
