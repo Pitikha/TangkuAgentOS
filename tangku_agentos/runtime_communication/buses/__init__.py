@@ -23,7 +23,11 @@ Example usage:
     )
 """
 
-from tangku_agentos.runtime_communication.buses.message_bus import MessageBus
+from tangku_agentos.runtime_communication.buses.message_bus import (
+    MessageBus,
+    Subscription,
+    RoutingRule,
+)
 from tangku_agentos.runtime_communication.buses.event_bus import EventBus
 from tangku_agentos.runtime_communication.buses.command_bus import CommandBus
 from tangku_agentos.runtime_communication.buses.query_bus import QueryBus
@@ -31,10 +35,18 @@ from tangku_agentos.runtime_communication.buses.broadcast_bus import BroadcastBu
 from tangku_agentos.runtime_communication.buses.request_response import RequestResponseBus
 
 __all__ = [
+    # MessageBus
     "MessageBus",
+    "Subscription",
+    "RoutingRule",
+    # EventBus
     "EventBus",
+    # CommandBus
     "CommandBus",
+    # QueryBus
     "QueryBus",
+    # BroadcastBus
     "BroadcastBus",
+    # RequestResponseBus
     "RequestResponseBus",
 ]
