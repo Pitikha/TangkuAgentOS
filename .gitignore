@@ -82,7 +82,7 @@ config.yaml
 *.tmp
 *.temp
 
-# Project-specific
+# Project-specific empty directories
 /tangku_agentos/assets/
 /tangku_agentos/examples/
 /tangku_agentos/scripts/
