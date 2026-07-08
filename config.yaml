@@ -1,0 +1,89 @@
+# TangkuAgentOS Default Configuration
+# This file contains the default configuration for the AI Operating System.
+# You can override these settings by creating a custom config.yaml file.
+
+# Kernel Configuration
+kernel:
+  name: "TangkuAgentOS"
+  version: "1.0.0b2"
+  debug: false
+  log_level: "INFO"
+
+# Provider Runtime Configuration
+providers:
+  # OpenAI Provider
+  openai:
+    enabled: true
+    api_key: "${OPENAI_API_KEY}"  # Set via environment variable
+    base_url: "https://api.openai.com/v1"
+    default_model: "gpt-3.5-turbo"
+    timeout: 30
+    max_retries: 3
+
+  # Local Provider (for local LLMs)
+  local:
+    enabled: false
+    model_path: "/path/to/local/model"
+    backend: "llama"  # or "mistral", "phi", etc.
+    max_context_length: 2048
+
+# Memory Engine Configuration
+memory:
+  enabled: true
+  backend: "vector"  # or "sql", "redis"
+  
+  # Vector DB Configuration
+  vector_db:
+    type: "faiss"  # or "chroma"
+    index_path: "./data/memory_index"
+    dimension: 768
+    
+  # SQL Configuration (if backend is "sql")
+  sql:
+    database_url: "sqlite:///./data/memory.db"
+
+# Workflow Engine Configuration
+workflow:
+  enabled: true
+  max_concurrent_workflows: 10
+  default_timeout: 300  # 5 minutes
+  retry_on_failure: true
+  max_retries: 3
+
+# Runtime Configuration
+runtimes:
+  - name: "provider_runtime"
+    enabled: true
+    dependencies: []
+    
+  - name: "memory_engine"
+    enabled: true
+    dependencies: []
+    
+  - name: "workflow_engine"
+    enabled: true
+    dependencies: ["provider_runtime", "memory_engine"]
+
+# Event Bus Configuration
+event_bus:
+  enabled: true
+  max_queue_size: 1000
+  worker_count: 4
+
+# Health Monitor Configuration
+health_monitor:
+  enabled: true
+  check_interval: 5  # seconds
+  alert_on_failure: true
+
+# API Server Configuration (if enabled)
+api:
+  enabled: false
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+
+# CLI Configuration
+cli:
+  color_output: true
+  verbose: false
