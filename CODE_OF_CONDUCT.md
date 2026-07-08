@@ -1,57 +1,32 @@
 # Code of Conduct
 
-## Our Commitment
+Tangku AgentOS is dedicated to fostering an open, inclusive, and respectful community for all contributors.
 
-The TangkuAgentOS community is dedicated to creating an open, respectful, and collaborative environment for everyone.
+## Standards
 
-We welcome contributions from people with different backgrounds, experience levels, and perspectives.
-
----
-
-## Expected Behavior
-
-Community members should:
-
-- Be respectful and constructive.
-- Help others learn and improve.
-- Give useful feedback.
-- Respect different opinions.
-- Focus on improving the project.
-
----
+- Be respectful, constructive, and courteous.
+- Assume positive intent and value diverse perspectives.
+- Avoid harassment, discrimination, or exclusionary language.
+- Keep discussions professional and focused on code and design.
 
 ## Unacceptable Behavior
 
-The following behavior is not acceptable:
+Unacceptable behavior includes but is not limited to:
 
-- Harassment or discrimination.
-- Personal attacks.
-- Deliberately disruptive behavior.
-- Sharing harmful or inappropriate content.
-- Any action that damages the community.
+- abusive or demeaning language
+- offensive comments, slurs, or harassment
+- personal attacks or threats
+- discrimination based on identity or background
+- disruptive or hostile conduct in issues, PRs, or discussions
 
----
+## Reporting
 
-## Reporting Problems
+If you experience or observe unacceptable behavior, report it to maintainers through GitHub or the repository security contact. Reports will be handled confidentially.
 
-If you experience or see unacceptable behavior, please report it through:
+## Enforcement
 
-- GitHub Discussions
-- GitHub Issues
-- Direct contact with project maintainers
+Project maintainers may take appropriate action, including warning participants, closing issues or PRs, and blocking disruptive users.
 
-Reports will be reviewed and handled appropriately.
+## Scope
 
----
-
-## Maintainer Responsibility
-
-Maintainers may:
-
-- Remove harmful content.
-- Close discussions that violate guidelines.
-- Take actions needed to keep the community healthy.
-
----
-
-Thank you for helping make TangkuAgentOS a welcoming open-source project.
+This code of conduct applies to all repository interactions, including issues, pull requests, reviews, discussions, and community forums.

@@ -1,41 +1,48 @@
-"""AgentOS module for TangkuAgentOS.
+"""AgentOS runtime foundation package."""
 
-This module provides the core functionality for managing agents, their capabilities,
-contexts, and execution within the TangkuAgentOS ecosystem.
-"""
-
-from .agents import Agent, AgentRegistry
-from .capabilities import AgentCapabilities
-from .context import AgentContext
-from .exceptions import AgentOSError, AgentExecutionError
-from .execution import AgentExecutor
-from .interfaces import AgentInterface
-from .manager import AgentManager
-from .manager_impl import AgentManagerImpl
-from .messages import AgentMessage
-from .permissions import AgentPermissions
-from .registry import AgentRegistry as AgentOSRegistry
-from .resources import AgentResources
-from .scheduler import AgentScheduler
-from .session import AgentSession
-from .types import AgentType
+from .agents import Agent
+from .capabilities import AgentCapability, CapabilityRegistry
+from .constants import AgentState, AgentStatus, CapabilityType, PermissionLevel
+from .context import AgentContextManager
+from .exceptions import (
+    AgentLifecycleError,
+    AgentPermissionError,
+    AgentRegistryError,
+    AgentRuntimeError,
+    AgentStateError,
+)
+from .interfaces import AgentManagerInterface, BaseAgent
+from .manager import AgentManager, AgentRuntimeRegistry
+from .messages import AgentMessage, AgentResult, AgentTask
+from .permissions import AgentPermission, AgentPermissionManager
+from .registry import AgentRegistry
+from .types import AgentContext, AgentDescriptor, AgentMessageRef, AgentResultRef
 
 __all__ = [
     "Agent",
-    "AgentRegistry",
-    "AgentCapabilities",
-    "AgentContext",
-    "AgentOSError",
-    "AgentExecutionError",
-    "AgentExecutor",
-    "AgentInterface",
     "AgentManager",
-    "AgentManagerImpl",
+    "AgentManagerInterface",
+    "AgentRegistry",
+    "AgentRuntimeRegistry",
+    "AgentContextManager",
+    "AgentCapability",
+    "CapabilityRegistry",
     "AgentMessage",
-    "AgentPermissions",
-    "AgentOSRegistry",
-    "AgentResources",
-    "AgentScheduler",
-    "AgentSession",
-    "AgentType",
+    "AgentTask",
+    "AgentResult",
+    "AgentDescriptor",
+    "AgentContext",
+    "AgentMessageRef",
+    "AgentResultRef",
+    "AgentPermission",
+    "AgentPermissionManager",
+    "AgentState",
+    "AgentStatus",
+    "CapabilityType",
+    "PermissionLevel",
+    "AgentLifecycleError",
+    "AgentPermissionError",
+    "AgentRegistryError",
+    "AgentRuntimeError",
+    "AgentStateError",
 ]

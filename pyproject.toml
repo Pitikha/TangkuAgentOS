@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Tangku AgentOS Contributors" }]
-keywords = ["agent", "automation", "workflow", "provider", "runtime", "ai", "ai-operating-system"]
-urls = { Homepage = "https://github.com/Pitikha/TangkuAgentOS", Repository = "https://github.com/Pitikha/TangkuAgentOS" }
+keywords = ["agent", "automation", "workflow", "provider", "runtime"]
+urls = { Homepage = "https://github.com/gauryat/TangkuAgentOS", Repository = "https://github.com/gauryat/TangkuAgentOS" }
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -22,36 +22,10 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Operating System :: OS Independent",
 ]
-
-dependencies = [
-    "fastapi>=0.100",
-    "uvicorn>=0.20",
-    "pydantic>=2.0",
-    "httpx>=0.25",
-    "pyyaml>=6.0",
-    "numpy>=1.24",
-    "click>=8.1",
-    "python-dotenv>=1.0",
-    "asyncio-throttle>=1.0",
-    "faiss-cpu>=1.7.4",
-    "chromadb>=0.4",
-    "pytest>=8.0",
-    "pytest-asyncio>=0.21",
-]
+dependencies = []
 
 [project.optional-dependencies]
-development = [
-    "pytest>=8",
-    "pytest-asyncio>=0.21",
-    "black>=23",
-    "flake8>=6",
-    "mypy>=1.0",
-    "types-pyyaml>=6.0",
-    "types-click>=8.1",
-]
-
-[project.scripts]
-tangku-agentos = "tangku_agentos.cli.cli:cli"
+development = ["pytest>=8", "build>=1.0"]
 
 [tool.setuptools]
 include-package-data = true
@@ -60,23 +34,3 @@ license-files = ["LICENSE"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["tangku_agentos*"]
-
-[tool.black]
-line-length = 88
-target-version = ["py310", "py311", "py312"]
-
-[tool.flake8]
-max-line-length = 88
-exclude = [".git", "__pycache__", "venv", ".venv"]
-
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]

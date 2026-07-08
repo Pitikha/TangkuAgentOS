@@ -1,101 +1,100 @@
-"""Memory Engine module for TangkuAgentOS.
+"""Memory engine foundation for Tangku AgentOS."""
 
-This module provides the core functionality for managing memory, including
-storage, retrieval, indexing, and vector databases for semantic search.
-"""
-
-from .backend import MemoryBackend
-from .cache import MemoryCache
-from .compressor import MemoryCompressor
-from .configuration import MemoryConfiguration
-from .context import MemoryContext
-from .coordinator import MemoryCoordinator
-from .events import MemoryEvent
-from .exceptions import (
-    MemoryError,
-    MemoryBackendError,
-    MemoryIndexError,
-    MemoryQueryError,
-    MemoryRetrievalError,
-    MemoryStorageError,
-    MemoryVersionError,
-)
-from .intelligence import MemoryIntelligence
 from .interfaces import (
-    MemoryInterface,
+    MemoryBackend,
+    MemoryCache,
+    MemoryCoordinator,
+    MemoryConfigurationManager,
     MemoryProvider,
-    MemoryReader,
-    MemoryWriter,
-    MemoryIndexer,
-    MemorySearcher,
+    MemoryRegistryInterface,
+    MemoryRepository,
+    MemoryResolver,
+    MemoryRouter,
+    MemorySerializer,
+    MemoryStore,
+    MemoryVersionManager,
+    MemoryManagerInterface,
+    MemoryMetadataManager,
+    MemoryStatisticsManager,
 )
 from .manager import MemoryManager
-from .metadata import MemoryMetadata
-from .models import (
-    Memory,
-    MemoryBlock,
-    MemoryChunk,
-    MemoryCollection,
-    MemoryEntry,
-    MemoryIndex,
-    MemoryQuery,
-    MemoryResult,
-    MemorySpan,
-)
-from .optimizer import MemoryOptimizer
-from .provider import MemoryProviderBase
 from .registry import MemoryRegistry
+from .provider import MemoryProvider
+from .backend import MemoryBackend
+from .store import MemoryStore
+from .cache import MemoryCache
 from .repository import MemoryRepository
-from .resolver import MemoryResolver
+from .coordinator import MemoryCoordinator
 from .router import MemoryRouter
 from .serializer import MemorySerializer
-from .statistics import MemoryStatistics
-from .store import MemoryStore
-from .vector_db import VectorDB
+from .compressor import MemoryCompressor
+from .optimizer import MemoryOptimizer
 from .version_manager import MemoryVersionManager
+from .metadata import MemoryMetadataManager
+from .statistics import MemoryStatisticsManager
+from .configuration import MemoryConfigurationManager
+from .context import MemoryContext
+from .resolver import MemoryResolver
+from .events import MemoryEvent, MemoryEventType, MemoryEventPriority
+from .intelligence import MemoryIntelligence
+from .models import (
+    MemoryAction,
+    MemoryCollection,
+    MemoryConfiguration,
+    MemoryEntry,
+    MemoryImportance,
+    MemoryMetadata,
+    MemoryNamespace,
+    MemoryPriority,
+    MemoryRecord,
+    MemoryReference,
+    MemoryRelationship,
+    MemorySnapshot,
+    MemoryState,
+    MemoryStatistics,
+    MemoryType,
+)
 
 __all__ = [
-    "MemoryBackend",
-    "MemoryCache",
-    "MemoryCompressor",
-    "MemoryConfiguration",
-    "MemoryContext",
-    "MemoryCoordinator",
-    "MemoryEvent",
-    "MemoryError",
-    "MemoryBackendError",
-    "MemoryIndexError",
-    "MemoryQueryError",
-    "MemoryRetrievalError",
-    "MemoryStorageError",
-    "MemoryVersionError",
-    "MemoryIntelligence",
-    "MemoryInterface",
-    "MemoryProvider",
-    "MemoryReader",
-    "MemoryWriter",
-    "MemoryIndexer",
-    "MemorySearcher",
-    "MemoryManager",
-    "MemoryMetadata",
-    "Memory",
-    "MemoryBlock",
-    "MemoryChunk",
-    "MemoryCollection",
-    "MemoryEntry",
-    "MemoryIndex",
-    "MemoryQuery",
-    "MemoryResult",
-    "MemorySpan",
-    "MemoryOptimizer",
-    "MemoryProviderBase",
-    "MemoryRegistry",
-    "MemoryRepository",
-    "MemoryResolver",
-    "MemoryRouter",
-    "MemorySerializer",
-    "MemoryStatistics",
-    "MemoryStore",
-    "VectorDB",
-    "MemoryVersionManager",
+    'MemoryManager',
+    'MemoryRegistry',
+    'MemoryProvider',
+    'MemoryBackend',
+    'MemoryStore',
+    'MemoryCache',
+    'MemoryRepository',
+    'MemoryCoordinator',
+    'MemoryRouter',
+    'MemorySerializer',
+    'MemoryCompressor',
+    'MemoryOptimizer',
+    'MemoryVersionManager',
+    'MemoryMetadataManager',
+    'MemoryStatisticsManager',
+    'MemoryConfigurationManager',
+    'MemoryResolver',
+    'MemoryContext',
+    'MemoryEvent',
+    'MemoryEventType',
+    'MemoryEventPriority',
+    'MemoryAction',
+    'MemoryCollection',
+    'MemoryConfiguration',
+    'MemoryEntry',
+    'MemoryImportance',
+    'MemoryMetadata',
+    'MemoryNamespace',
+    'MemoryPriority',
+    'MemoryRecord',
+    'MemoryReference',
+    'MemoryRelationship',
+    'MemorySnapshot',
+    'MemoryState',
+    'MemoryStatistics',
+    'MemoryType',
+    'MemoryManagerInterface',
+    'MemoryRegistryInterface',
+    'MemoryProvider',
+    'MemoryStore',
+    'MemoryIntelligence',
 ]

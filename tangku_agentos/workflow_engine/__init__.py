@@ -1,39 +1,94 @@
-"""Workflow Engine module for TangkuAgentOS.
+"""Workflow engine foundation for Tangku AgentOS."""
 
-This module provides the core functionality for managing workflows, including
-execution, orchestration, and scheduling of tasks and agents.
-"""
-
-from .context import WorkflowContext
-from .events import WorkflowEvent
-from .exceptions import WorkflowError
-from .executor import WorkflowExecutor
-from .history import WorkflowHistory
-from .interfaces import WorkflowInterface
-from .lifecycle import WorkflowLifecycle
-from .manager import WorkflowManager
-from .models import Workflow, WorkflowStep, WorkflowDefinition
-from .orchestration import WorkflowOrchestrator
-from .queue import WorkflowQueue
+from .interfaces import (
+    WorkflowBuilder,
+    WorkflowContextProvider,
+    WorkflowExecutor,
+    WorkflowHistoryManager,
+    WorkflowLifecycleManager,
+    WorkflowManagerInterface,
+    WorkflowRegistryInterface,
+    WorkflowScheduler,
+    WorkflowQueue,
+)
+from .models import (
+    Workflow,
+    WorkflowAction,
+    WorkflowActionDescriptor,
+    WorkflowCondition,
+    WorkflowEdge,
+    WorkflowInstance,
+    WorkflowMetadata,
+    WorkflowNode,
+    WorkflowResult,
+    WorkflowStage,
+    WorkflowState,
+    WorkflowStep,
+    WorkflowTrigger,
+    WorkflowTriggerDescriptor,
+    WorkflowConfiguration,
+)
 from .registry import WorkflowRegistry
-from .scheduler import WorkflowScheduler
-from .state import WorkflowState
+from .manager import WorkflowManager
+from .executor import WorkflowExecutorImpl
+from .scheduler import WorkflowSchedulerImpl
+from .history import WorkflowHistoryManager, WorkflowHistoryManagerImpl
+from .lifecycle import WorkflowLifecycleManagerImpl
+from .state import WorkflowStateManager
+from .context import WorkflowContext, WorkflowContextManager
+from .queue import WorkflowQueue
+from .events import WorkflowEvent, WorkflowEventType, WorkflowEventManagerImpl
+from .orchestration import (
+    ExecutionGraphManager,
+    OrchestrationManager,
+    PipelineManager,
+    TemplateManager,
+    WorkflowEventManager,
+    WorkflowStateManagerExtended,
+    WorkflowStudioManager,
+)
 
 __all__ = [
-    "WorkflowContext",
-    "WorkflowEvent",
-    "WorkflowError",
-    "WorkflowExecutor",
-    "WorkflowHistory",
-    "WorkflowInterface",
-    "WorkflowLifecycle",
-    "WorkflowManager",
     "Workflow",
+    "WorkflowInstance",
     "WorkflowStep",
-    "WorkflowDefinition",
-    "WorkflowOrchestrator",
-    "WorkflowQueue",
-    "WorkflowRegistry",
-    "WorkflowScheduler",
+    "WorkflowStage",
+    "WorkflowNode",
+    "WorkflowEdge",
+    "WorkflowCondition",
+    "WorkflowTrigger",
+    "WorkflowAction",
+    "WorkflowResult",
+    "WorkflowMetadata",
+    "WorkflowConfiguration",
     "WorkflowState",
+    "WorkflowContext",
+    "WorkflowContextManager",
+    "WorkflowQueue",
+    "WorkflowManager",
+    "WorkflowRegistry",
+    "WorkflowExecutor",
+    "WorkflowExecutorImpl",
+    "WorkflowScheduler",
+    "WorkflowSchedulerImpl",
+    "WorkflowHistoryManager",
+    "WorkflowHistoryManagerImpl",
+    "WorkflowLifecycleManagerImpl",
+    "WorkflowStateManager",
+    "WorkflowEvent",
+    "WorkflowEventType",
+    "WorkflowEventManagerImpl",
+    "WorkflowStudioManager",
+    "PipelineManager",
+    "ExecutionGraphManager",
+    "OrchestrationManager",
+    "WorkflowStateManagerExtended",
+    "WorkflowEventManager",
+    "TemplateManager",
+    "WorkflowManagerInterface",
+    "WorkflowRegistryInterface",
+    "WorkflowContextProvider",
+    "WorkflowBuilder",
+    "WorkflowTriggerDescriptor",
+    "WorkflowActionDescriptor",
 ]

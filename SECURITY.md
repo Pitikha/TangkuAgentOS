@@ -1,45 +1,30 @@
 # Security Policy
 
-## Reporting a Security Issue
+Tangku AgentOS takes security reports seriously. If you discover a vulnerability, please report it promptly and avoid public disclosure until a fix is available.
 
-If you discover a security vulnerability in TangkuAgentOS, please do not create a public issue.
+## Reporting Security Issues
 
-Instead, report it privately to the project maintainers.
+Preferred reporting path:
 
----
+- Use GitHub Security Advisories: https://github.com/gauryat/TangkuAgentOS/security/advisories
+
+If you do not have access to security advisories, open a private issue through GitHub and clearly label it as a security report.
 
 ## What to Include
 
-Please include:
+- A concise description of the issue
+- Steps to reproduce the vulnerability
+- Affected versions or components
+- Any relevant logs, stack traces, or attacker scenarios
 
-- Description of the vulnerability.
-- Steps to reproduce the issue.
-- Affected components.
-- Possible impact.
-- Suggested fixes (if available).
+## Supported Versions
 
----
+This repository is currently maintained at the v1.0.0-beta RC1 release candidate level.
 
-## Response Process
+## Disclosure Policy
 
-After receiving a report:
+Please do not disclose security issues publicly until the maintainers have had a chance to respond and provide a fix.
 
-1. The issue will be reviewed.
-2. The vulnerability will be investigated.
-3. A fix will be prepared if necessary.
-4. Updates will be shared after the issue is resolved.
+## Response
 
----
-
-## Security Best Practices
-
-Contributors should:
-
-- Avoid committing secrets or API keys.
-- Keep dependencies updated.
-- Follow secure coding practices.
-- Report security concerns responsibly.
-
----
-
-Thank you for helping keep TangkuAgentOS secure.
+Maintainers will acknowledge reports as soon as possible and provide remediation guidance or fixes based on the severity of the issue.

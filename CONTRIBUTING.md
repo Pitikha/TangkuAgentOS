@@ -1,79 +1,42 @@
-# Contributing to TangkuAgentOS
+# Contributing
 
-Thank you for your interest in contributing to TangkuAgentOS.
+Thank you for contributing to Tangku AgentOS.
 
-TangkuAgentOS is an open-source AI Operating System project, and contributions from developers, researchers, designers, and AI enthusiasts are welcome.
+## How to Contribute
 
----
-
-## Ways to Contribute
-
-You can contribute by:
-
-- Fixing bugs
-- Improving documentation
-- Adding features
-- Creating new runtimes
-- Improving AI integrations
-- Adding tests
-- Improving performance
-- Suggesting ideas
-
----
-
-## Before Starting
-
-For large changes:
-
-1. Open an Issue or Discussion.
-2. Explain your idea.
-3. Discuss possible implementation approaches.
-
-This helps keep the architecture organized.
-
----
+1. Read the repository documentation, issue tracker, and open discussions before starting work.
+2. Open an issue to describe bugs, feature ideas, or documentation improvements.
+3. Create a dedicated branch for your change from `main`.
+4. Add tests or documentation updates for all meaningful changes.
+5. Submit a pull request following the GitHub PR template.
 
 ## Contribution Process
 
-1. Fork the repository.
-2. Create a new branch.
-3. Make your changes.
-4. Test your changes.
-5. Submit a Pull Request.
+- Use clear, descriptive commit messages.
+- Keep changes focused and maintain backward compatibility.
+- Include regression tests or smoke checks for runtime behavior.
+- Update documentation when functionality or interfaces change.
 
-Example branch names: Your Branch Name.
+## Code Review
 
----
+Pull requests should include:
 
-## Pull Requests
+- Summary of changes
+- Validation steps taken
+- Test results
+- Documentation updates
 
-When submitting a Pull Request:
+## Validation
 
-Please include:
+Before submitting a pull request, validate locally:
 
-- What was changed.
-- Why the change was needed.
-- How it was tested.
+```bash
+pytest -q
+python -m build --sdist --wheel
+```
 
----
+## Reporting Issues
 
-## Community Guidelines
+Open issues at: https://github.com/gauryat/TangkuAgentOS/issues
 
-Please:
-
-- Be respectful.
-- Help other contributors.
-- Keep discussions constructive.
-- Share knowledge.
-
----
-
-## Questions
-
-If you need help:
-
-- Open a Discussion.
-- Create an Issue.
-- Ask the community.
-
-Thank you for helping build TangkuAgentOS.
+If your issue is security-related, use the security procedures in `SECURITY.md`.

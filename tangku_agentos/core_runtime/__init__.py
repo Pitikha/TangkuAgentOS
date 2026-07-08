@@ -1,33 +1,73 @@
-"""Core Runtime module for TangkuAgentOS.
+"""Core Kernel foundation for Tangku AgentOS."""
 
-This module provides the foundational runtime components, including
-configuration, event bus, lifecycle management, logging, and state management.
-"""
-
-from .base import BaseRuntime
-from .configuration import RuntimeConfiguration
-from .constants import RuntimeConstants
-from .event_bus import EventBus
-from .exceptions import RuntimeError, RuntimeLifecycleError
-from .lifecycle_manager import RuntimeLifecycleManager
-from .logger import RuntimeLogger
-from .registry import RuntimeRegistry
-from .state_manager import RuntimeStateManager
-from .types import RuntimeStatus, RuntimeType
-from .utils import RuntimeUtils
+from .base import CoreComponent, Configurable, Monitorable
+from .configuration import ConfigurationManager
+from .constants import LogLevel, LifecycleEvent, RegistryScope, StateChangeType
+from .event_bus import EventBus, EventListener
+from .exceptions import (
+    CoreError,
+    ConfigurationError,
+    EventBusError,
+    LifecycleError,
+    LoggerError,
+    RegistryError,
+    StateError,
+)
+from .lifecycle_manager import LifecycleManager
+from .logger import Logger
+from .registry import Registry
+from .state_manager import StateManager
+from .types import (
+    ConfigData,
+    ConfigKey,
+    ConfigValue,
+    EventHandler,
+    EventPayload,
+    EventRecord,
+    LifecycleState,
+    Metadata,
+    RegistryEntry,
+    RegistryKey,
+    RegistryValue,
+    StateSnapshot,
+)
+from .utils import SingletonMeta, validate_identifier, merge_configurations
 
 __all__ = [
-    "BaseRuntime",
-    "RuntimeConfiguration",
-    "RuntimeConstants",
+    "CoreComponent",
+    "Configurable",
+    "Monitorable",
+    "ConfigurationManager",
     "EventBus",
-    "RuntimeError",
-    "RuntimeLifecycleError",
-    "RuntimeLifecycleManager",
-    "RuntimeLogger",
-    "RuntimeRegistry",
-    "RuntimeStateManager",
-    "RuntimeStatus",
-    "RuntimeType",
-    "RuntimeUtils",
+    "EventListener",
+    "Logger",
+    "Registry",
+    "StateManager",
+    "LifecycleManager",
+    "LogLevel",
+    "LifecycleEvent",
+    "RegistryScope",
+    "StateChangeType",
+    "CoreError",
+    "ConfigurationError",
+    "EventBusError",
+    "LifecycleError",
+    "LoggerError",
+    "RegistryError",
+    "StateError",
+    "ConfigData",
+    "ConfigKey",
+    "ConfigValue",
+    "EventHandler",
+    "EventPayload",
+    "EventRecord",
+    "LifecycleState",
+    "Metadata",
+    "RegistryEntry",
+    "RegistryKey",
+    "RegistryValue",
+    "StateSnapshot",
+    "SingletonMeta",
+    "validate_identifier",
+    "merge_configurations",
 ]
