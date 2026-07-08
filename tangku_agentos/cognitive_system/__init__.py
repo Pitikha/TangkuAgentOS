@@ -42,11 +42,10 @@ Reflect → Learn → Update Memory → Continue
 Example usage:
     from tangku_agentos.cognitive_system import (
         CognitiveAgent,
-        PerceptionEngine,
-        ReasoningEngine,
-        PlanningEngine,
-        MemoryInterface,
-        KnowledgeInterface,
+        CognitiveConfig,
+        CognitiveState,
+        CognitiveLoop,
+        CognitiveProfile,
     )
     
     # Create a cognitive agent
@@ -69,10 +68,57 @@ Example usage:
 
 # Cognitive Core
 from tangku_agentos.cognitive_system.core.cognitive_agent import CognitiveAgent
-from tangku_agentos.cognitive_system.core.cognitive_config import CognitiveConfig
-from tangku_agentos.cognitive_system.core.cognitive_state import CognitiveState
-from tangku_agentos.cognitive_system.core.cognitive_loop import CognitiveLoop
-from tangku_agentos.cognitive_system.core.cognitive_profile import CognitiveProfile
+from tangku_agentos.cognitive_system.core.cognitive_config import (
+    CognitiveConfig,
+    MemoryConfig,
+    KnowledgeConfig,
+    ReasoningConfig,
+    PlanningConfig,
+    DecisionConfig,
+    AttentionConfig,
+    LearningConfig,
+    ExecutionConfig,
+    EvaluationConfig,
+    MonitoringConfig,
+    MetaCognitionConfig,
+    ReasoningMode,
+    MemoryStrategy,
+    KnowledgeStrategy,
+    LearningStrategy,
+    DecisionStrategy,
+    PlanningStrategy,
+    AttentionStrategy,
+    create_cognitive_config,
+)
+from tangku_agentos.cognitive_system.core.cognitive_state import (
+    CognitiveState,
+    CognitiveStateEnum,
+    CognitiveStage,
+    CognitiveMetrics,
+    CognitiveContext,
+)
+from tangku_agentos.cognitive_system.core.cognitive_loop import (
+    CognitiveLoop,
+    LoopMode,
+    LoopStatus,
+    LoopMetrics,
+    LoopHooks,
+)
+from tangku_agentos.cognitive_system.core.cognitive_profile import (
+    CognitiveProfile,
+    ANALYTICAL_PROFILE,
+    CREATIVE_PROFILE,
+    RESEARCH_PROFILE,
+    CODING_PROFILE,
+    PLANNING_PROFILE,
+    FAST_PROFILE,
+    THOROUGH_PROFILE,
+    PROFILES,
+    get_profile,
+    list_profiles,
+    register_profile,
+    unregister_profile,
+)
 
 # Cognitive Engines
 from tangku_agentos.cognitive_system.engines.perception import PerceptionEngine
@@ -87,9 +133,6 @@ from tangku_agentos.cognitive_system.engines.learning import LearningEngine
 # Memory Interfaces
 from tangku_agentos.cognitive_system.memory.working_memory import WorkingMemory
 from tangku_agentos.cognitive_system.memory.long_term_memory import LongTermMemoryInterface
-from tangku_agentos.cognitive_system.memory.episodic_memory import EpisodicMemoryInterface
-from tangku_agentos.cognitive_system.memory.semantic_memory import SemanticMemoryInterface
-from tangku_agentos.cognitive_system.memory.memory_consolidation import MemoryConsolidationEngine
 
 # Knowledge Interface
 from tangku_agentos.cognitive_system.knowledge.knowledge_interface import KnowledgeInterface
@@ -113,13 +156,14 @@ from tangku_agentos.cognitive_system.goals.goal_manager import GoalManager
 # Models
 from tangku_agentos.cognitive_system.models.cognitive_input import CognitiveInput
 from tangku_agentos.cognitive_system.models.cognitive_output import CognitiveOutput
-from tangku_agentos.cognitive_system.models.cognitive_context import CognitiveContext
-from tangku_agentos.cognitive_system.models.memory_entry import MemoryEntry
-from tangku_agentos.cognitive_system.models.knowledge_query import KnowledgeQuery
-from tangku_agentos.cognitive_system.models.reasoning_result import ReasoningResult
-from tangku_agentos.cognitive_system.models.planning_result import PlanningResult
-from tangku_agentos.cognitive_system.models.decision_result import DecisionResult
-from tangku_agentos.cognitive_system.models.action_plan import ActionPlan
+from tangku_agentos.cognitive_system.models.other_models import (
+    MemoryEntry,
+    KnowledgeQuery,
+    ReasoningResult,
+    PlanningResult,
+    DecisionResult,
+    ActionPlan,
+)
 
 # Exceptions
 from tangku_agentos.cognitive_system.exceptions import (
@@ -138,15 +182,58 @@ from tangku_agentos.cognitive_system.exceptions import (
     ConfidenceError,
     MonitoringError,
     MetaCognitionError,
+    AgentError,
 )
+
+# Agent Capabilities
+from tangku_agentos.cognitive_system.core.cognitive_agent import AgentCapabilities
 
 __all__ = [
     # Cognitive Core
     "CognitiveAgent",
     "CognitiveConfig",
+    "MemoryConfig",
+    "KnowledgeConfig",
+    "ReasoningConfig",
+    "PlanningConfig",
+    "DecisionConfig",
+    "AttentionConfig",
+    "LearningConfig",
+    "ExecutionConfig",
+    "EvaluationConfig",
+    "MonitoringConfig",
+    "MetaCognitionConfig",
+    "ReasoningMode",
+    "MemoryStrategy",
+    "KnowledgeStrategy",
+    "LearningStrategy",
+    "DecisionStrategy",
+    "PlanningStrategy",
+    "AttentionStrategy",
+    "create_cognitive_config",
     "CognitiveState",
+    "CognitiveStateEnum",
+    "CognitiveStage",
+    "CognitiveMetrics",
+    "CognitiveContext",
     "CognitiveLoop",
+    "LoopMode",
+    "LoopStatus",
+    "LoopMetrics",
+    "LoopHooks",
     "CognitiveProfile",
+    "ANALYTICAL_PROFILE",
+    "CREATIVE_PROFILE",
+    "RESEARCH_PROFILE",
+    "CODING_PROFILE",
+    "PLANNING_PROFILE",
+    "FAST_PROFILE",
+    "THOROUGH_PROFILE",
+    "PROFILES",
+    "get_profile",
+    "list_profiles",
+    "register_profile",
+    "unregister_profile",
     # Cognitive Engines
     "PerceptionEngine",
     "AttentionEngine",
@@ -159,9 +246,6 @@ __all__ = [
     # Memory Interfaces
     "WorkingMemory",
     "LongTermMemoryInterface",
-    "EpisodicMemoryInterface",
-    "SemanticMemoryInterface",
-    "MemoryConsolidationEngine",
     # Knowledge Interface
     "KnowledgeInterface",
     # Execution Engines
@@ -179,7 +263,6 @@ __all__ = [
     # Models
     "CognitiveInput",
     "CognitiveOutput",
-    "CognitiveContext",
     "MemoryEntry",
     "KnowledgeQuery",
     "ReasoningResult",
@@ -202,4 +285,7 @@ __all__ = [
     "ConfidenceError",
     "MonitoringError",
     "MetaCognitionError",
+    "AgentError",
+    # Agent Capabilities
+    "AgentCapabilities",
 ]
