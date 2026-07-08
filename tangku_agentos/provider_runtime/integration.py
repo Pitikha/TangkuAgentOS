@@ -749,3 +749,121 @@ class ModelCatalogManager:
     def resolve_model(self, model_id: str) -> Optional[Dict[str, Any]]:
         """Resolve a model by ID."""
         return self._models.get(model_id)
+
+
+# --- New Classes for Phase 8 ---
+
+
+class ParallelRequestManager:
+    """Manages parallel execution of requests to multiple providers."""
+
+    def __init__(self, hub: Any = None, max_concurrency: int = 5) -> None:
+        self._hub = hub
+        self.max_concurrency = max_concurrency
+        self._lock = RLock()
+        self._semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def execute_parallel(
+        self, provider_ids: List[str], request: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Execute requests to multiple providers in parallel."""
+        if not provider_ids:
+            return []
+        tasks = []
+        for provider_id in provider_ids:
+            tasks.append(self._execute_single(provider_id, request))
+        return await asyncio.gather(*tasks)
+
+    async def _execute_single(
+        self, provider_id: str, request: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Execute a single request to a provider."""
+        async with self._semaphore:
+            if self._hub is None:
+                return {"error": "Hub is required for parallel execution"}
+            adapter = self._hub.get_adapter(provider_id)
+            if adapter is None:
+                return {"error": f"No adapter for provider {provider_id}"}
+            try:
+                response = await adapter.send_async(request)
+                return {"provider_id": provider_id, "response": response}
+            except Exception as e:
+                return {"provider_id": provider_id, "error": str(e)}
+
+
+class ResponseAggregator:
+    """Aggregates responses from multiple providers."""
+
+    def __init__(self) -> None:
+        self._lock = RLock()
+
+    def aggregate(
+        self, responses: List[Dict[str, Any]], method: str = "majority"
+    ) -> Dict[str, Any]:
+        """Aggregate responses using the specified method."""
+        if not responses:
+            return {"error": "No responses to aggregate"}
+        if method == "majority":
+            return self._majority_vote(responses)
+        elif method == "concatenate":
+            return self._concatenate(responses)
+        elif method == "average":
+            return self._average(responses)
+        else:
+            return self._majority_vote(responses)
+
+    def _majority_vote(self, responses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Aggregate responses using majority vote."""
+        texts = [
+            r.get("response", {}).get("output", {}).get("text", "")
+            for r in responses
+            if r.get("response", {}).get("success", False)
+        ]
+        if not texts:
+            return {"error": "No successful responses"}
+        from collections import Counter
+        most_common = Counter(texts).most_common(1)[0][0]
+        return {
+            "aggregated": most_common,
+            "method": "majority_vote",
+            "responses": responses,
+        }
+
+    def _concatenate(self, responses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Aggregate responses by concatenation."""
+        texts = [
+            r.get("response", {}).get("output", {}).get("text", "")
+            for r in responses
+            if r.get("response", {}).get("success", False)
+        ]
+        if not texts:
+            return {"error": "No successful responses"}
+        combined = "\n\n".join(texts)
+        return {
+            "aggregated": combined,
+            "method": "concatenation",
+            "responses": responses,
+        }
+
+    def _average(self, responses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Aggregate responses by averaging (for numerical outputs)."""
+        # Placeholder for numerical aggregation
+        return {"error": "Numerical aggregation not implemented"}
+
+
+class StreamingAggregator:
+    """Aggregates streaming responses from multiple providers."""
+
+    def __init__(self) -> None:
+        self._lock = RLock()
+        self._streams: Dict[str, List[Dict[str, Any]]] = {}
+
+    def aggregate_streams(
+        self, streams: Dict[str, List[Dict[str, Any]]]
+    ) -> List[Dict[str, Any]]:
+        """Aggregate streaming chunks from multiple providers."""
+        aggregated = []
+        for provider_id, chunks in streams.items():
+            for chunk in chunks:
+                aggregated.append({"provider_id": provider_id, "chunk": chunk})
+        return aggregated
