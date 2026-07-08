@@ -8,7 +8,7 @@ Tangku AgentOS is a modular Agent Operating System for autonomous AI agents, wor
 ## Current Status
 
 - **Version:** v1.0.0-beta RC2
-- **Completion:** ~99%
+- **Completion:** ~ongoing
 - **Regression Tests:** Passing
 - **Release Candidate:** Verified for broader production readiness and packaging consistency
 
