@@ -10,6 +10,6 @@ __all__ = [
     "WorkingMemory",
     "LongTermMemoryInterface",
     "EpisodicMemoryInterface",
-    "SemanticMemoryInterface", 
+    "SemanticMemoryInterface",
     "MemoryConsolidationEngine"
 ]
