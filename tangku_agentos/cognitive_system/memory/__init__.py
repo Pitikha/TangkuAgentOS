@@ -8,8 +8,8 @@ from tangku_agentos.cognitive_system.memory.memory_consolidation import MemoryCo
 
 __all__ = [
     "WorkingMemory",
-    "LongTermMemoryInterface", 
+    "LongTermMemoryInterface",
     "EpisodicMemoryInterface",
-    "SemanticMemoryInterface",
+    "SemanticMemoryInterface", 
     "MemoryConsolidationEngine"
 ]
